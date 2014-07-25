@@ -8,12 +8,14 @@ all_tests = {
     'pylint': ('pylint', "*.py"),
 }
 
+
 def runTest(command, fpattern):
     from pprint import pprint as pp
     files = getFilesFromArguments(sys.argv[1:], fpattern)
 
     for fname in files:
-        os.system("%s %s"%(command, fname))
+        os.system("%s %s" % (command, fname))
+
 
 def whatTestsToRun(args):
     if len(args) == 1:
@@ -27,10 +29,12 @@ def whatTestsToRun(args):
         return tuple(tests)
     return all_tests.keys()
 
+
 def main():
     tests = whatTestsToRun(sys.argv)
     for test in tests:
         runTest(*all_tests[test])
+
 
 if __name__ == "__main__":
     main()

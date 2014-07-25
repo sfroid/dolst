@@ -9,4 +9,3 @@ app_settings = {
     'title': "Dolst"
 
 }
-

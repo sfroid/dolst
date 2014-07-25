@@ -1,9 +1,3 @@
-# window
-# lists
-# checkboxes
-# drag drop
-# always on top
-
 import wx
 import logging
 
@@ -19,11 +13,10 @@ class SamplePane(wx.Panel):
     def __init__(self, parent, colour, label):
         wx.Panel.__init__(self, parent, style=wx.BORDER_SUNKEN)
         self.SetBackgroundColour(colour)
-        wx.StaticText(self, -1, label, (5,5))
+        wx.StaticText(self, -1, label, (5, 5))
 
     def SetOtherLabel(self, label):
         wx.StaticText(self, -1, label, (5, 30))
-
 
 
 class WindowFrame(wx.Frame):
@@ -37,15 +30,18 @@ class WindowFrame(wx.Frame):
         self.SetMinSize
 
     def createMenuBar(self):
-        filemenu= wx.Menu()
+        filemenu = wx.Menu()
 
-        filemenu.Append(wx.ID_ABOUT, "&About"," Information about this program")
+        filemenu.Append(wx.ID_ABOUT, "&About",
+                        "Information about this program")
         filemenu.AppendSeparator()
-        filemenu.Append(wx.ID_EXIT,"E&xit"," Terminate the program")
+        filemenu.Append(wx.ID_EXIT, "E&xit", "Terminate the program")
 
         menuBar = wx.MenuBar()
-        menuBar.Append(filemenu,"&File") # Adding the "filemenu" to the MenuBar
-        self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
+        # Adding the "filemenu" to the MenuBar
+        menuBar.Append(filemenu, "&File")
+        # Adding the MenuBar to the Frame content.
+        self.SetMenuBar(menuBar)
 
     def addChildPanels(self):
         splitter = MultiSplitterWindow(self, style=wx.SP_LIVE_UPDATE)
@@ -71,8 +67,6 @@ class WindowFrame(wx.Frame):
         splitter.AppendWindow(p3, 125)
 
 
-
-
 class MainApp(wx.App):
     def __init__(self):
         wx.App.__init__(self)
@@ -92,5 +86,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

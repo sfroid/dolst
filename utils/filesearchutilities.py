@@ -2,10 +2,12 @@ import os
 import sys
 import fnmatch
 
+
 def getRootDirPath():
     currdir = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(currdir)
     return root
+
 
 def getFilesRecursively(args, ffilter):
     files = []
@@ -21,6 +23,7 @@ def getFilesRecursively(args, ffilter):
             files.extend(matches)
 
     return files
+
 
 def getFilesFromArguments(args, ffilter="*.*"):
     files = []

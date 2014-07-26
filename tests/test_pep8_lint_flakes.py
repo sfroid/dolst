@@ -1,6 +1,6 @@
 import os
 import sys
-from utils.filesearchutilities import getFilesFromArguments
+from utilities.filesearchutilities import getFilesFromArguments
 
 all_tests = {
     'pep8': ('pep8', "*.py"),

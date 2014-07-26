@@ -1,3 +1,13 @@
+"""
+Create a experimental panel which contains
+- list of checkboxes
+- text labels with checkboxes
+- editable text
+- drag drop, etc
+
+- sfroid (c)
+"""
+
 import wx
 import logging
 
@@ -25,11 +35,14 @@ class EditableText(wx.Panel):
         self.editText.Bind(wx.EVT_KILL_FOCUS, self.onEditLostFocus)
         self.editText.Hide()
 
+
     def onLeftDown(self, event=None):
         self.startEdit()
 
+
     def onGainFocus(self, event=None):
         self.onLeftDown()
+
 
     def startEdit(self):
         self.escapePressed = False
@@ -44,10 +57,12 @@ class EditableText(wx.Panel):
         self.editText.Show()
         self.editText.SetFocus()
 
+
     def setStaticTextSize(self):
         size = self.stext.GetSize()
         size = (self.width, size[1] + 2)
         self.stext.SetSize(size)
+
 
     def onKeyDownInEdit(self, event):
         key = event.GetKeyCode()
@@ -74,11 +89,13 @@ class EditableText(wx.Panel):
 
         event.Skip()
 
+
     def onEditLostFocus(self, event):
         if self.escapePressed is True:
             self.onEndEdit(False)
             return
         self.onEndEdit(True)
+
 
     def onEndEdit(self, save):
         if save:
@@ -100,21 +117,24 @@ class MyLinePanel(wx.Panel):
         self.chkbox = wx.CheckBox(self, -1)
         self.chkbox.Bind(wx.EVT_CHECKBOX, self.onToggleCheckbox)
         sizer.Add(self.chkbox, 0)
-        self.textEditor = EditableText(self, text, width - 2*border)
+        self.textEditor = EditableText(self, text, width - 2 * border)
         sizer.Add(self.textEditor, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizer(sizer)
         self.Layout()
         sizer.Fit(self)
-        print self.__class__, self.GetSize()
+
 
     def onToggleCheckbox(self, event):
         print "checkbox value: %s" % self.chkbox.GetValue()
 
+
     def onMoveFocusUpDown(self, direction):
         self.Parent.onMoveFocusUpDown(direction, self)
 
+
     def onMoveFocusDownOnEnter(self):
         self.Parent.onMoveFocusDownOnEnter(self)
+
 
     def setFocus(self):
         self.textEditor.onGainFocus("dummy")
@@ -131,8 +151,8 @@ class MyPanel(wx.Panel):
         self.sizer = sizer
 
         for x in range(10):
-            text = "Item %s" % (x+1)
-            textPanel = MyLinePanel(self, text, width - 2*self.border)
+            text = "Item %s" % (x + 1)
+            textPanel = MyLinePanel(self, text, width - 2 * self.border)
             sizer.Add(textPanel, 0, wx.EXPAND | wx.ALL, self.border)
             self.textPanels.append(textPanel)
 
@@ -140,12 +160,14 @@ class MyPanel(wx.Panel):
         self.Layout()
         sizer.Fit(self)
 
+
     def getTextPanelPos(self, tpanel):
         for i, tp in enumerate(self.textPanels):
             if tp == tpanel:
                 return i
 
         return None
+
 
     def onMoveFocusUpDown(self, direction, textPanel):
         pos = self.getTextPanelPos(textPanel)
@@ -156,26 +178,27 @@ class MyPanel(wx.Panel):
         if direction == 1:
             # UP
             if pos > 0:
-                self.textPanels[pos-1].setFocus()
+                self.textPanels[pos - 1].setFocus()
             else:
                 self.textPanels[-1].setFocus()
         else:
             if pos < (len(self.textPanels) - 1):
-                self.textPanels[pos+1].setFocus()
+                self.textPanels[pos + 1].setFocus()
             else:
                 self.textPanels[0].setFocus()
 
+
     def onMoveFocusDownOnEnter(self, textPanel):
         pos = self.getTextPanelPos(textPanel)
-        textPanel = MyLinePanel(self, "", self.width - 2*self.border)
+        textPanel = MyLinePanel(self, "", self.width - 2 * self.border)
 
         if pos == len(self.textPanels) - 1:
             self.sizer.Add(textPanel, 0, wx.EXPAND | wx.ALL, self.border)
             self.textPanels.append(textPanel)
         else:
-            self.sizer.Insert(pos+1, textPanel, 0,
+            self.sizer.Insert(pos + 1, textPanel, 0,
                               wx.EXPAND | wx.ALL, self.border)
-            self.textPanels.insert(pos+1, textPanel)
+            self.textPanels.insert(pos + 1, textPanel)
 
         self.sizer.Layout()
         textPanel.setFocus()
@@ -187,8 +210,6 @@ class MyFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         width, ignore = self.GetClientSizeTuple()
         sizer.Add(MyPanel(self, width), 0, wx.EXPAND, 1)
-
-        print self.__class__, self.GetSize()
 
 
 if __name__ == "__main__":

@@ -12,12 +12,13 @@ def getFileTime(fpath):
 
 def runTests():
     os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    os.system("reset; pwd; python tests/test_pep8_lint_flakes.py")
+    os.system("reset; python tests/test_pep8_lint_flakes.py")
 
 def main():
     old_files = getFilesFromArguments([], "*.py")
 
     last_file_change_time = dict((fn, getFileTime(fn)) for fn in old_files)
+    runTests()
 
     while 1:
         time.sleep(5)

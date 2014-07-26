@@ -10,151 +10,25 @@ Create a experimental panel which contains
 
 import wx
 import logging
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-
-
-class EditableText(wx.Panel):
-    def __init__(self, parent, text, width=-1):
-        wx.Panel.__init__(self, parent, size=(width, -1))
-
-        self.text = text
-        self.escapePressed = False
-        self.width = width
-
-        textpos = (0, 0)
-
-        self.stext = wx.StaticText(self, -1, text,
-                                   pos=textpos, size=(width, -1))
-        self.setStaticTextSize()
-        self.stext.Bind(wx.EVT_LEFT_UP, self.onLeftDown)
-
-        self.editText = wx.TextCtrl(self, -1, size=self.stext.GetSize())
-        self.editText.Bind(wx.EVT_KEY_DOWN, self.onKeyDownInEdit)
-        self.editText.Bind(wx.EVT_KILL_FOCUS, self.onEditLostFocus)
-        self.editText.Hide()
-
-
-    def onLeftDown(self, event=None):
-        self.startEdit()
-
-
-    def onGainFocus(self, event=None):
-        self.onLeftDown()
-
-
-    def startEdit(self):
-        self.escapePressed = False
-        self.stext.Hide()
-
-        size = self.stext.GetSize()
-        pos = self.stext.GetPositionTuple()
-        self.editText.SetSize(size)
-        self.editText.SetPosition(pos)
-        self.editText.SetValue(self.text)
-
-        self.editText.Show()
-        self.editText.SetFocus()
-
-
-    def setStaticTextSize(self):
-        size = self.stext.GetSize()
-        size = (self.width, size[1] + 2)
-        self.stext.SetSize(size)
-
-
-    def onKeyDownInEdit(self, event):
-        key = event.GetKeyCode()
-        print key
-
-        if key == wx.WXK_RETURN:
-            if not (event.controlDown or
-                    event.altDown or
-                    event.shiftDown or
-                    event.metaDown):
-                self.onEndEdit(True)
-                self.Parent.onMoveFocusDownOnEnter()
-                return
-
-        if key == wx.WXK_ESCAPE:
-            self.escapePressed = True
-            self.onEndEdit(False)
-            return
-
-        if key in (wx.WXK_UP, wx.WXK_DOWN):
-            self.onEndEdit(False)
-            self.Parent.onMoveFocusUpDown(1 if key == wx.WXK_UP else 0)
-            return
-
-        event.Skip()
-
-
-    def onEditLostFocus(self, event):
-        if self.escapePressed is True:
-            self.onEndEdit(False)
-            return
-        self.onEndEdit(True)
-
-
-    def onEndEdit(self, save):
-        if save:
-            self.text = self.editText.GetValue()
-            self.stext.Label = self.text
-            self.setStaticTextSize()
-
-        self.editText.Hide()
-        self.stext.Show()
-
-
-class MyLinePanel(wx.Panel):
-    def __init__(self, parent, text, width=-1):
-        wx.Panel.__init__(self, parent, size=(width, -1))
-        self.text = text
-        border = 0
-
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.chkbox = wx.CheckBox(self, -1)
-        self.chkbox.Bind(wx.EVT_CHECKBOX, self.onToggleCheckbox)
-        sizer.Add(self.chkbox, 0)
-        self.textEditor = EditableText(self, text, width - 2 * border)
-        sizer.Add(self.textEditor, 1, wx.EXPAND | wx.ALL, 0)
-        self.SetSizer(sizer)
-        self.Layout()
-        sizer.Fit(self)
-
-
-    def onToggleCheckbox(self, event):
-        print "checkbox value: %s" % self.chkbox.GetValue()
-
-
-    def onMoveFocusUpDown(self, direction):
-        self.Parent.onMoveFocusUpDown(direction, self)
-
-
-    def onMoveFocusDownOnEnter(self):
-        self.Parent.onMoveFocusDownOnEnter(self)
-
-
-    def setFocus(self):
-        self.textEditor.onGainFocus("dummy")
-
+from utilities.log_utils import init_logging
+from experiments.editable_text import EditableText
+from line_items_panel import LineItemsPanel
 
 class MyPanel(wx.Panel):
     def __init__(self, parent, width):
         wx.Panel.__init__(self, parent, -1, size=(width, -1))
         self.border = 1
         self.width = width
-        self.textPanels = []
+        self.item_line_panels = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer = sizer
 
         for x in range(10):
             text = "Item %s" % (x + 1)
-            textPanel = MyLinePanel(self, text, width - 2 * self.border)
-            sizer.Add(textPanel, 0, wx.EXPAND | wx.ALL, self.border)
-            self.textPanels.append(textPanel)
+            item_line_panel = LineItemsPanel(self, text, width - 2 * self.border)
+            sizer.Add(item_line_panel, 0, wx.EXPAND | wx.ALL, self.border)
+            self.item_line_panels.append(item_line_panel)
 
         self.SetSizer(sizer)
         self.Layout()
@@ -162,46 +36,46 @@ class MyPanel(wx.Panel):
 
 
     def getTextPanelPos(self, tpanel):
-        for i, tp in enumerate(self.textPanels):
+        for i, tp in enumerate(self.item_line_panels):
             if tp == tpanel:
                 return i
 
         return None
 
 
-    def onMoveFocusUpDown(self, direction, textPanel):
-        pos = self.getTextPanelPos(textPanel)
+    def on_move_focus_updown(self, direction, item_line_panel):
+        pos = self.getTextPanelPos(item_line_panel)
         if pos is None:
-            logging.error("Could no find position for testPanel: %s",
-                          textPanel)
+            logging.error("Could no find position for line panel: %s",
+                          item_line_panel)
 
         if direction == 1:
             # UP
             if pos > 0:
-                self.textPanels[pos - 1].setFocus()
+                self.item_line_panels[pos - 1].set_focus_and_edit_test()
             else:
-                self.textPanels[-1].setFocus()
+                self.item_line_panels[-1].set_focus_and_edit_test()
         else:
-            if pos < (len(self.textPanels) - 1):
-                self.textPanels[pos + 1].setFocus()
+            if pos < (len(self.item_line_panels) - 1):
+                self.item_line_panels[pos + 1].set_focus_and_edit_test()
             else:
-                self.textPanels[0].setFocus()
+                self.item_line_panels[0].set_focus_and_edit_test()
 
 
-    def onMoveFocusDownOnEnter(self, textPanel):
-        pos = self.getTextPanelPos(textPanel)
-        textPanel = MyLinePanel(self, "", self.width - 2 * self.border)
+    def on_move_focus_down_on_enter(self, item_line_panel):
+        pos = self.getTextPanelPos(item_line_panel)
+        item_line_panel = MyLinePanel(self, "", self.width - 2 * self.border)
 
-        if pos == len(self.textPanels) - 1:
-            self.sizer.Add(textPanel, 0, wx.EXPAND | wx.ALL, self.border)
-            self.textPanels.append(textPanel)
+        if pos == len(self.item_line_panels) - 1:
+            self.sizer.Add(item_line_panel, 0, wx.EXPAND | wx.ALL, self.border)
+            self.item_line_panels.append(item_line_panel)
         else:
-            self.sizer.Insert(pos + 1, textPanel, 0,
+            self.sizer.Insert(pos + 1, item_line_panel, 0,
                               wx.EXPAND | wx.ALL, self.border)
-            self.textPanels.insert(pos + 1, textPanel)
+            self.item_line_panels.insert(pos + 1, item_line_panel)
 
         self.sizer.Layout()
-        textPanel.setFocus()
+        item_line_panel.set_focus_and_edit_test()
 
 
 class MyFrame(wx.Frame):
@@ -213,6 +87,8 @@ class MyFrame(wx.Frame):
 
 
 if __name__ == "__main__":
+    init_logging()
+
     app = wx.App()
     frame = MyFrame("Todo list panel", (500, 500))
     frame.CenterOnScreen()

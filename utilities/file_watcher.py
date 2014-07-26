@@ -1,6 +1,11 @@
 import os
 import time
-from utils.filesearchutilities import getFilesFromArguments
+
+try:
+    from utilities.filesearchutilities import getFilesFromArguments
+except:
+    print "Could not import utilities. Have you sourced the environment?"
+    exit()
 
 def getFileTime(fpath):
     return os.path.getmtime(fpath)

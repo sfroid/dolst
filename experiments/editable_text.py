@@ -1,5 +1,8 @@
 """
 Editable text panel
+
+    { sfroid : 2014 }
+
 """
 
 import wx
@@ -21,16 +24,16 @@ class EditableText(wx.Panel):
 
         self.stext = wx.StaticText(self, -1, text,
                                    pos=textpos, size=(width, -1))
-        self.set_static_text_size()
-        self.stext.Bind(wx.EVT_LEFT_UP, self.on_mouse_left_up)
+        self._set_static_text_size()
+        self.stext.Bind(wx.EVT_LEFT_UP, self.cb_on_mouse_left_up)
 
-        self.edit_text = wx.TextCtrl(self, -1, size=self.stext.GetSize())
-        self.edit_text.Bind(wx.EVT_KEY_DOWN, self.on_key_down_in_edit)
-        self.edit_text.Bind(wx.EVT_KILL_FOCUS, self.on_editor_lost_focus)
-        self.edit_text.Hide()
+        self.text_editor = wx.TextCtrl(self, -1, size=self.stext.GetSize())
+        self.text_editor.Bind(wx.EVT_KEY_DOWN, self._on_key_down_in_edit)
+        self.text_editor.Bind(wx.EVT_KILL_FOCUS, self.cb_on_editor_lost_focus)
+        self.text_editor.Hide()
 
 
-    def on_mouse_left_up(self, event=None):
+    def cb_on_mouse_left_up(self, event=None):
         """
         Handler for mouse click event
         """
@@ -48,18 +51,33 @@ class EditableText(wx.Panel):
 
         size = self.stext.GetSize()
         pos = self.stext.GetPositionTuple()
-        self.edit_text.SetSize(size)
-        self.edit_text.SetPosition(pos)
-        self.edit_text.SetValue(self.text)
+        self.text_editor.SetSize(size)
+        self.text_editor.SetPosition(pos)
+        self.text_editor.SetValue(self.text)
 
-        self.edit_text.Show()
-        self.edit_text.SetFocus()
+        self.text_editor.Show()
+        self.text_editor.SetFocus()
+
 
     def callback_on_end_edit(self, callback):
-        self.end_edit_callbacks.append(callback)
+        """
+        Set a callback to be called when an edit finishes.
+        The callback is called with arguments
+        callback(self, reason)
+        """
+        if callback not in self.end_edit_callbacks:
+            self.end_edit_callbacks.append(callback)
 
 
-    def set_static_text_size(self):
+    def _call_end_edit_callbacks(self, reason):
+        """
+        Call the callbacks with the reason.
+        """
+        for callback in self.end_edit_callbacks:
+            callback(self, reason)
+
+
+    def _set_static_text_size(self):
         """
         The default text size / spacing is not aesthetic, so we give a
         bit of padding around the text.
@@ -69,7 +87,7 @@ class EditableText(wx.Panel):
         self.stext.SetSize(size)
 
 
-    def on_key_down_in_edit(self, event):
+    def _on_key_down_in_edit(self, event):
         """
         Called when we are in edit mode and a key is pressed.
         Used for handling "Enter", "Esc" and the "Up" and "Down" keys.
@@ -82,22 +100,22 @@ class EditableText(wx.Panel):
                     event.altDown or
                     event.shiftDown or
                     event.metaDown):
-                self.on_end_edit(True, 'key_return')
+                self._on_end_edit(True, 'key_return')
                 return
 
         if key == wx.WXK_ESCAPE:
             self.escape_pressed = True
-            self.on_end_edit(False, 'key_escape')
+            self._on_end_edit(False, 'key_escape')
             return
 
         if key in (wx.WXK_UP, wx.WXK_DOWN):
-            self.on_end_edit(False, ('key_up' if key == wx.WXK_UP else 'key_down'))
+            self._on_end_edit(False, ('key_up' if key == wx.WXK_UP else 'key_down'))
             return
 
         event.Skip()
 
 
-    def on_editor_lost_focus(self, event):
+    def cb_on_editor_lost_focus(self, event):
         """
         Called when the editor loses focus for any reason
         while we are in edit mode.
@@ -106,24 +124,21 @@ class EditableText(wx.Panel):
         if self.escape_pressed is True:
             self.escape_pressed = False
             return
-        self.on_end_edit(True, 'lost_focus')
+        self._on_end_edit(True, 'lost_focus')
 
 
-    def on_end_edit(self, save, reason):
+    def _on_end_edit(self, save, reason):
         """
         Called when edit is done.
         The save argument determines whether the edit is to be
         saved or discarded. (e.g. discarded if esc was pressed)
         """
         if save:
-            self.text = self.edit_text.GetValue()
+            self.text = self.text_editor.GetValue()
             self.stext.Label = self.text
-            self.set_static_text_size()
+            self._set_static_text_size()
 
-        self.edit_text.Hide()
+        self.text_editor.Hide()
         self.stext.Show()
 
-        for callback in self.end_edit_callbacks:
-            callback(reason)
-
-
+        self._call_end_edit_callbacks(reason)

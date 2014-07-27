@@ -1,6 +1,13 @@
 """
 The Line panel which holds the editable text and other widgets.
+
+    { sfroid : 2014 }
+
 """
+
+import wx
+from experiments.editable_text import EditableText
+
 
 class LineItemsPanel(wx.Panel):
     """
@@ -19,17 +26,17 @@ class LineItemsPanel(wx.Panel):
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.checkbox = wx.CheckBox(self, -1)
-        self.checkbox.Bind(wx.EVT_CHECKBOX, self.on_toggle_checkbox)
+        self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
         sizer.Add(self.checkbox, 0)
         self.text_editor = EditableText(self, text, width - 2 * border)
-        self.textEditor.callback_on_end_edit(self.on_end_textedit)
+        self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         sizer.Add(self.text_editor, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizer(sizer)
         self.Layout()
         sizer.Fit(self)
 
 
-    def on_toggle_checkbox(self, event):
+    def cb_on_toggle_checkbox(self, event):
         """
         Event handler that's called when the checkbox is clicked.
         """
@@ -46,7 +53,7 @@ class LineItemsPanel(wx.Panel):
         self.end_edit_callbacks.append((callback, reason))
 
 
-    def on_end_textedit(self, reason):
+    def cb_on_end_textedit(self, editor, reason):
         """
         Called when a child editable text finishes edition
         for any reason. Reason is also returned and can be
@@ -57,17 +64,18 @@ class LineItemsPanel(wx.Panel):
         key_escape
         lost_focus
         """
-        for callback, rs in self.end_edit_callbacks:
-            if isinstance(rs, tuple):
-                if reason in rs:
-                    callback(reason)
-            elif rs == reason:
-                callback(reason)
-            elif rs is None:
-                callback(reason)
+        for callback, acc_rs in self.end_edit_callbacks:
+            if isinstance(acc_rs, tuple):
+                if reason in acc_rs:
+                    callback(self, reason)
+            elif acc_rs == reason:
+                callback(self, reason)
+            elif acc_rs is None:
+                callback(self, reason)
 
 
-    def set_focus_and_edit_test(self):
-        self.text_editor.start_edit("dummy")
-
-
+    def set_focus_and_startedit(self):
+        """
+        Sets focus on the editable text and stats editing.
+        """
+        self.text_editor.start_edit()

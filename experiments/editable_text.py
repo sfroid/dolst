@@ -22,7 +22,7 @@ class EditableText(wx.Panel):
         self.tab_pressed_callbacks = []
         self.del_in_empty_callbacks = []
 
-        textpos = (0, 0)
+        textpos = (4, 3)
 
         self.stext = wx.StaticText(self, -1, text, pos=textpos, size=(width, -1))
         self._set_static_text_size()
@@ -42,7 +42,7 @@ class EditableText(wx.Panel):
         bit of padding around the text.
         """
         size = self.stext.GetSize()
-        size = (self.width, size[1] + 2)
+        size = (self.width, size[1] + 4)
         self.stext.SetSize(size)
 
 
@@ -62,8 +62,9 @@ class EditableText(wx.Panel):
         self.escape_pressed = False
 
         size = self.stext.GetSize()
+        size = (size[0], size[1] + 4)
         pos = self.stext.GetPositionTuple()
-        pos = (pos[0] - 4, pos[1])
+        pos = (pos[0] - 4, pos[1] - 3)
 
         self.stext.Hide()
         self.text_editor.SetSize(size)
@@ -72,7 +73,7 @@ class EditableText(wx.Panel):
 
         self.text_editor.Show()
         self.text_editor.SetFocus()
-        self.Layout()
+        self.Refresh()
 
 
     def callback_on_end_edit(self, callback):
@@ -124,7 +125,7 @@ class EditableText(wx.Panel):
         Used for handling "Enter", "Esc" and the "Up" and "Down" keys.
         """
         key = event.GetKeyCode()
-        print key
+        print "Keycode : %s" % key
 
         if key == wx.WXK_RETURN:
             if not (event.controlDown or
@@ -210,6 +211,7 @@ class EditableText(wx.Panel):
             font = self.text_editor.GetFont()
             font.SetStrikethrough(strk_through)
             self.text_editor.SetFont(font)
+            self._set_static_text_size()
 
 
     def close(self):

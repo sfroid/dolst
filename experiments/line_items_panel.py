@@ -30,7 +30,9 @@ class LineItemsPanel(wx.Panel):
         self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
         sizer.Add(self.checkbox, 0)
 
-        self.text_editor = EditableText(self, text, width - 2 * border)
+        checkbox_width = self.checkbox.GetSize()[0]
+
+        self.text_editor = EditableText(self, text, width - 2 * border - checkbox_width)
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
         sizer.Add(self.text_editor, 1, wx.EXPAND | wx.ALL, 0)

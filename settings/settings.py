@@ -4,6 +4,8 @@ Application and view settings
 - sfroid (c)
 '''
 
+import sys
+
 VIEW_SETTINGS = {
     'categories_visible': True,
     'categories_width': 100,
@@ -20,17 +22,18 @@ TEST_SETTINGS = {
 }
 
 
-def get_setting(self_module, group, attr=None, default=None):
+def get_setting(group, attr=None, default=None):
     """
     Reload the settings module and return the latest setting
     referred by group and attr.
 
     If attr is not present, return default.
     """
-    reload(self_module)
+    curr_module = sys.modules[__name__]
+    reload(curr_module)
     try:
         if attr is None:
-            return getattr(self_module, group, default)
-        return getattr(self_module, group).get(attr, default)
+            return getattr(curr_module, group, default)
+        return getattr(curr_module, group).get(attr, default)
     except BaseException:
         return default

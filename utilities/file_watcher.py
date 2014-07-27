@@ -4,6 +4,7 @@ and runs the given command (test_pep8_lint_flakes.py by default)
 """
 
 import os
+import sys
 import time
 import logging
 from utilities.log_utils import set_logging_level_to_debug
@@ -98,12 +99,12 @@ def run_tests_on_changes(command, file_data, dirty_files):
     return dirty_files
 
 
-def main(command=None):
+def main(kwargs):
     """
     Main entry point for the tests.
     """
-    if command is None:
-        command = COMMAND
+    command = kwargs.pop('command', COMMAND)
+    only_modified = kwargs.pop('only_modified', False)
 
     dirty_files = set()
 
@@ -111,25 +112,27 @@ def main(command=None):
     old_file_change_times = dict((fn, get_file_mod_time(fn)) for fn in old_files)
 
     # on first run, run tests on all files
-    os.system("reset")
-    dirty_files, result = run_tests(command)
-    print result
+    if only_modified is False:
+        os.system("reset")
+        dirty_files, result = run_tests(command)
+        last_full_test_time = time.time()
+        print result
 
-    last_full_test_time = time.time()
 
     while 1:
-        sleep_time = settings.get_setting(settings, "TEST_SETTINGS", 'file_check_delay', 5)
+        sleep_time = settings.get_setting("TEST_SETTINGS", 'file_check_delay', 5)
         time.sleep(sleep_time)
-
-        if (time.time() - last_full_test_time) > FULL_TEST_RUN_TIME:
-            last_full_test_time = time.time()
-            dirty_files, result = run_tests(command)
-            print result
-            continue
 
         # get all files
         latest_files = get_files_from_arguments([], "*.py")
         latest_file_change_times = dict((fn, get_file_mod_time(fn)) for fn in latest_files)
+
+        if only_modified is False:
+            if (time.time() - last_full_test_time) > FULL_TEST_RUN_TIME:
+                last_full_test_time = time.time()
+                dirty_files, result = run_tests(command)
+                print result
+                continue
 
         dirty_files = run_tests_on_changes(command,
                                            (latest_files, latest_file_change_times,
@@ -140,6 +143,20 @@ def main(command=None):
         old_file_change_times = latest_file_change_times
 
 
+def parse_args():
+    """
+    Parse the arguments and return as a dictionary
+    """
+    run_on_only_modified = False
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "only_modified":
+            logging.info("Only running tests on changes")
+            run_on_only_modified = True
+
+    return {"only_modified": run_on_only_modified}
+
+
+
 if __name__ == "__main__":
     set_logging_level_to_debug()
-    main()
+    main(parse_args())

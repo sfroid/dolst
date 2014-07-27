@@ -16,13 +16,17 @@ python files in that folder (folders are searched recursively).
 
 import os
 import sys
-from utilities.filesearchutilities import getFilesFromArguments
+from utilities.filesearchutilities import get_files_from_arguments
 from collections import OrderedDict
 
+PYLINT_OPTS = "--output-format=colorized --reports=n --max-line-length=120 --disable=R0904"
+PEP8_OPTS = "--max-line-length=120 --ignore=E3 --format=pylint"
+PYFLAKES_OPTS = ""
+
 ALL_TESTS = {
-    'pep8': ('pep8 --max-line-length=120 --ignore=E3 --format=pylint', "*.py"),
-    'pyflakes': ('pyflakes', "*.py"),
-    'pylint': ('pylint --output-format=colorized --reports=n --max-line-length=120', "*.py"),
+    'pep8': ('pep8 %s' % PEP8_OPTS, "*.py"),
+    'pyflakes': ('pyflakes %s' % PYFLAKES_OPTS, "*.py"),
+    'pylint': ('pylint %s' % PYLINT_OPTS, "*.py"),
 }
 
 # converting it to a ordered dict, so tests are run in
@@ -35,11 +39,17 @@ def run_test(command, fpattern):
     This method takes a command and a pattern to match files.
     Then, it runs the command on each file that matches the pattern.
     """
-    files = getFilesFromArguments(sys.argv[1:], fpattern)  # how oasdflskdjf laksjfdl jskfldfjalskfjd
+    files = get_files_from_arguments(sys.argv[1:], fpattern)
+    bad_files = []
     print "\nRunning test : %s\n" % command
 
     for fname in files:
-        os.system("%s %s" % (command, fname))
+        result = os.system("%s %s" % (command, fname))
+        if result != 0:
+            bad_files.append(fname)
+
+    if len(bad_files) > 0:
+        print "\nBAD_FILES=%s" % (",".join(bad_files))
 
 
 def what_tests_to_run(args):

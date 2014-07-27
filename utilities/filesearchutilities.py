@@ -1,15 +1,30 @@
+"""
+Utility functions for searching and finding files
+
+    { sfroid : 2014 }
+
+"""
+
 import os
 import sys
 import fnmatch
 
 
-def getRootDirPath():
+def get_root_dir_path():
+    """
+    Get the root directory path of the repo
+    assuming that this file is in the utilties folder.
+    """
     currdir = os.path.dirname(os.path.abspath(__file__))
     root = os.path.dirname(currdir)
     return root
 
 
-def getFilesRecursively(args, ffilter):
+def get_files_recursively(args, ffilter):
+    """
+    Given a set of files/folders as args, we recursively
+    all files that match the given filter ffilter.
+    """
     files = []
     for arg in args:
         if os.path.isfile(arg):
@@ -17,7 +32,8 @@ def getFilesRecursively(args, ffilter):
                 files.append(arg)
         elif os.path.isdir(arg):
             matches = []
-            for root, dirnames, filenames in os.walk(arg):
+            for rdftuple in os.walk(arg):
+                root, filenames = rdftuple[0], rdftuple[2]
                 for filename in fnmatch.filter(filenames, ffilter):
                     matches.append(os.path.join(root, filename))
             files.extend(matches)
@@ -25,23 +41,30 @@ def getFilesRecursively(args, ffilter):
     return files
 
 
-def getFilesFromArguments(args, ffilter="*.*"):
-    files = []
+def get_files_from_arguments(args, ffilter="*.*"):
+    """
+    Given files/folders in args (list), we recursively
+    get all files matching the given filter.
+    """
     if len(args) == 0:
         # run on all files in the root folder
-        dpath = getRootDirPath()
-        inputArguments = [dpath]
+        dpath = get_root_dir_path()
+        input_arguments = [dpath]
     else:
-        inputArguments = sys.argv[1:]
+        input_arguments = sys.argv[1:]
 
-    return getFilesRecursively(inputArguments, ffilter)
+    return get_files_recursively(input_arguments, ffilter)
 
 
 def main():
+    """
+    Test function
+    """
     from pprint import pprint as pp
 
-    files = getFilesFromArguments(sys.argv[1:], "*.py")
+    files = get_files_from_arguments(sys.argv[1:], "*.py")
     pp(files)
+
 
 if __name__ == "__main__":
     main()

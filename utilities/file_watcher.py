@@ -1,54 +1,145 @@
+"""
+Watches a folder for any changes every few seconds (5 by default)
+and runs the given command (test_pep8_lint_flakes.py by default)
+"""
+
 import os
 import time
+import logging
+from utilities.log_utils import set_logging_level_to_debug
+from subprocess import Popen, PIPE
+from settings import settings
 
 try:
-    from utilities.filesearchutilities import getFilesFromArguments
-except:
+    from utilities.filesearchutilities import get_files_from_arguments
+except ImportError:
     print "Could not import utilities. Have you sourced the environment?"
     exit()
 
+FULL_TEST_RUN_TIME = 3600
+COMMAND = ["python", "tests/test_pep8_lint_flakes.py"]
 
-def getFileTime(fpath):
+
+def get_file_mod_time(fpath):
+    """
+    Returns the last modification time of the given file
+    as a number.
+    """
     return os.path.getmtime(fpath)
 
 
-def runTests():
+def run_tests(command, fnames=None):
+    """
+    Runs the command which runs the tests.
+    """
+    bad_files = set()
     os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    os.system("reset; python tests/test_pep8_lint_flakes.py")
+    if fnames is None:
+        logging.info("Running tests on all files with the command:\n    %s\n", command)
+        result = Popen(command, stdout=PIPE).communicate()[0]
+    else:
+        command = command + [fname for fname in fnames]
+        logging.info("Running tests on selected files with the command:\n    %s\n", command)
+        result = Popen(command, stdout=PIPE).communicate()[0]
+
+    for line in result.split("\n"):
+        if line.startswith("BAD_FILES"):
+            bad_files.update(set(line.split("=")[1].split(",")))
+
+    return bad_files, result
 
 
-def main():
-    old_files = getFilesFromArguments([], "*.py")
+def get_added_files(new_files, old_files):
+    """
+    Return the strings (file names/paths) present in new_files which
+    not present in old_files
+    """
+    new_set = set(new_files)
+    old_set = set(old_files)
+    return new_set.difference(old_set)
 
-    last_file_change_time = dict((fn, getFileTime(fn)) for fn in old_files)
-    runTests()
+
+def get_modified_files(new_fch_times, old_fch_times):
+    """
+    Given dictionaries of name, mod_time pairs of latest and old files,
+    return list of filenames that changed
+    """
+    mod_files = set()
+    for fname, mod_time in new_fch_times.items():
+        if fname in old_fch_times:
+            if mod_time > old_fch_times[fname]:
+                mod_files.add(fname)
+    return mod_files
+
+
+def run_tests_on_changes(command, file_data, dirty_files):
+    """
+    Run the tests only on added files or on
+    modified files
+    """
+    (latest_files, latest_file_change_times,
+     old_files, old_file_change_times) = file_data
+
+    added_files = get_added_files(latest_files, old_files)
+    dirty_files.difference_update(set(added_files))
+    modified_files = get_modified_files(latest_file_change_times, old_file_change_times)
+    dirty_files.difference_update(set(modified_files))
+
+    all_to_test = added_files.union(modified_files).union(dirty_files)
+    new_and_modified = added_files.union(modified_files)
+
+    if len(new_and_modified) > 0:
+        os.system("reset")
+        dirty_files, result = run_tests(command, all_to_test)
+        print result
+    else:
+        print "Nothing to test/report. Time = %s" % time.ctime()
+
+    return dirty_files
+
+
+def main(command=None):
+    """
+    Main entry point for the tests.
+    """
+    if command is None:
+        command = COMMAND
+
+    dirty_files = set()
+
+    old_files = get_files_from_arguments([], "*.py")
+    old_file_change_times = dict((fn, get_file_mod_time(fn)) for fn in old_files)
+
+    # on first run, run tests on all files
+    os.system("reset")
+    dirty_files, result = run_tests(command)
+    print result
+
+    last_full_test_time = time.time()
 
     while 1:
-        time.sleep(5)
-        new_files = getFilesFromArguments([], "*.py")
-        if len(new_files) != len(old_files):
-            old_files = new_files
-            last_file_change_time = dict((fn, getFileTime(fn))
-                                         for fn in old_files)
-            runTests()
+        sleep_time = settings.get_setting(settings, "TEST_SETTINGS", 'file_check_delay', 5)
+        time.sleep(sleep_time)
+
+        if (time.time() - last_full_test_time) > FULL_TEST_RUN_TIME:
+            last_full_test_time = time.time()
+            dirty_files, result = run_tests(command)
+            print result
             continue
 
-        if sorted(new_files) != sorted(old_files):
-            old_files = new_files
-            last_file_change_time = dict((fn, getFileTime(fn))
-                                         for fn in old_files)
-            runTests()
-            continue
+        # get all files
+        latest_files = get_files_from_arguments([], "*.py")
+        latest_file_change_times = dict((fn, get_file_mod_time(fn)) for fn in latest_files)
 
-        old_files = new_files
-        new_file_change_time = dict((fn, getFileTime(fn)) for fn in old_files)
+        dirty_files = run_tests_on_changes(command,
+                                           (latest_files, latest_file_change_times,
+                                            old_files, old_file_change_times),
+                                           dirty_files)
 
-        if (max(new_file_change_time.values()) >
-                max(last_file_change_time.values())):
-            last_file_change_time = dict((fn, getFileTime(fn))
-                                         for fn in old_files)
-            runTests()
-            continue
+        old_files = latest_files
+        old_file_change_times = latest_file_change_times
+
 
 if __name__ == "__main__":
+    set_logging_level_to_debug()
     main()

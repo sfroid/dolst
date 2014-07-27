@@ -26,8 +26,7 @@ class ItemsListPanel(wx.Panel):
 
         for cdx1 in range(10):
             text = "Item %s" % (cdx1 + 1)
-            line_item_panel = LineItemsPanel(self, text, width - 2 * self.border)
-            line_item_panel.callback_on_end_textedit(self._on_end_line_item_textedit)
+            line_item_panel = self.create_line(text, self.width, self.border)
             sizer.Add(line_item_panel, 0, wx.EXPAND | wx.ALL, self.border)
             self.line_item_panels.append(line_item_panel)
 
@@ -82,7 +81,35 @@ class ItemsListPanel(wx.Panel):
                           line_item_panel)
             return
 
+        print "inserting new item in pos : %s" % pos
         self._insert_new_item(pos)
+        self._set_focus_on_item_for_edit(pos + 1)
+
+
+    def create_line(self, text, width, border):
+        """
+        Create a line_item, bind callbacks, and return item
+        """
+        line_item = LineItemsPanel(self, text, width - 2 * border)
+        line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
+        line_item.callback_on_del_in_empty(self._on_del_empty_line)
+        return line_item
+
+
+    def _on_del_empty_line(self, item):
+        """
+        Remove the item when del/backspace is pressed in an empty line
+        """
+        # remove item from sizer and destroy it
+        pos = self.line_item_panels.index(item)
+        self.line_item_panels.pop(pos)
+        self.sizer.Remove(pos)
+        self.sizer.Fit(self)
+        self.Layout()
+        wx.CallAfter(item.close)
+
+        self._set_focus_on_item_for_edit(pos - 1)
+
 
     def _insert_new_item(self, pos):
         """
@@ -90,7 +117,7 @@ class ItemsListPanel(wx.Panel):
         Also sets focus at that item.
         """
 
-        line_item_panel = LineItemsPanel(self, "", self.width - 2 * self.border)
+        line_item_panel = self.create_line("", self.width, self.border)
 
         if pos == len(self.line_item_panels) - 1:
             self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.ALL, self.border)
@@ -100,12 +127,15 @@ class ItemsListPanel(wx.Panel):
                               wx.EXPAND | wx.ALL, self.border)
             self.line_item_panels.insert(pos + 1, line_item_panel)
 
-        self.sizer.Layout()
+        self.sizer.Fit(self)
+        self.Layout()
+
 
     def _set_focus_on_item_for_edit(self, pos):
         """
         Sets focus on a particular item and starts editing text
         """
-        pos = pos % len(self.line_item_panels)
-        item = self.line_item_panels[pos]
-        item.set_focus_and_startedit()
+        if len(self.line_item_panels) > 0:
+            pos = pos % len(self.line_item_panels)
+            item = self.line_item_panels[pos]
+            item.set_focus_and_startedit()

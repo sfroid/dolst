@@ -35,12 +35,10 @@ def main():
     """
     Main entry point for the app.
     """
-    # import wx.lib.inspection
     app = wx.App(False)
     frame = DolstTopFrame("Todo list panel", (500, 500))
     frame.CenterOnScreen()
     frame.Show(True)
-    # wx.lib.inspection.InspectionTool().Show()
     app.MainLoop()
 
 

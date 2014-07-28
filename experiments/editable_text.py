@@ -6,7 +6,7 @@ Editable text panel
 """
 
 import wx
-from experiments.platform_tools import PLATFORM
+from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
 
 class EditableText(wx.Panel):
     """
@@ -22,10 +22,7 @@ class EditableText(wx.Panel):
         self.tab_pressed_callbacks = []
         self.del_in_empty_callbacks = []
 
-        yshift = 3
-        if PLATFORM == "mac":
-            yshift = 0
-        textpos = (4, yshift)
+        textpos = get_editable_text_pos()
 
         self.stext = wx.StaticText(self, -1, text, pos=textpos, size=(width, -1))
         self._set_static_text_size()
@@ -84,11 +81,7 @@ class EditableText(wx.Panel):
         size = (size[0], size[1] + 4)
         pos = self.stext.GetPositionTuple()
 
-        xshift = -4
-        yshift = -3
-        if PLATFORM == "mac":
-            xshift = -2
-            yshift = -3
+        xshift, yshift = get_editor_ctrl_pos()
 
         pos = (pos[0] + xshift, pos[1] + yshift)
 

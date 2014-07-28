@@ -28,11 +28,12 @@ class LineItemsPanel(wx.Panel):
 
         self.checkbox = wx.CheckBox(self, -1)
         self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
+
         sizer.Add(self.checkbox, 0)
 
         checkbox_width = self.checkbox.GetSize()[0]
 
-        self.text_editor = EditableText(self, text, width - 2 * border - checkbox_width)
+        self.text_editor = EditableText(self, text, width=(width - 2 * border - checkbox_width))
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
         sizer.Add(self.text_editor, 1, wx.EXPAND | wx.ALL, 0)
@@ -69,10 +70,15 @@ class LineItemsPanel(wx.Panel):
         # if checkbox is checked, show text in strikethrough
         print "checkbox value: %s" % self.checkbox.GetValue()
 
-        props = {"strikethrough": False}
         if self.checkbox.GetValue():
-            props = {"strikethrough": True}
-        self.text_editor.set_text_properties(props)
+            props = {
+                "strikethrough": True,
+                "text_colour": "#aaaaaa",
+            }
+
+            self.text_editor.set_text_properties(props)
+        else:
+            self.text_editor.reset_text_properties()
 
 
     def callback_on_end_textedit(self, callback, reason=None):

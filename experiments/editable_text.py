@@ -33,7 +33,23 @@ class EditableText(wx.Panel):
         self.text_editor.Bind(wx.EVT_KILL_FOCUS, self.cb_on_editor_lost_focus)
         self.text_editor.Hide()
 
+        self._default_text_props = self._get_default_text_props()
         self.Layout()
+
+
+    def _get_default_text_props(self):
+        """
+        Return the default text properties as a dictionary
+        """
+        font = self.stext.GetFont()
+        strikethrough = font.GetStrikethrough()
+
+        text_colour = self.stext.GetForegroundColour()
+
+        return {
+            'strikethrough': strikethrough,
+            'text_colour': text_colour,
+        }
 
 
     def _set_static_text_size(self):
@@ -208,10 +224,30 @@ class EditableText(wx.Panel):
             font.SetStrikethrough(strk_through)
             self.stext.SetFont(font)
 
-            font = self.text_editor.GetFont()
-            font.SetStrikethrough(strk_through)
-            self.text_editor.SetFont(font)
-            self._set_static_text_size()
+        if "text_colour" in props:
+            # colour can be in #rrggbb(aa) aa optional
+            text_colour = props['text_colour']
+            self.stext.SetForegroundColour(text_colour)
+
+        self.Update()
+        self.Refresh()
+
+    def reset_text_properties(self):
+        """
+        Reset text properties to the default values
+        """
+        props = self._default_text_props
+
+        strikethrough = props['strikethrough']
+        text_colour = props['text_colour']
+
+        font = self.stext.GetFont()
+        font.SetStrikethrough(strikethrough)
+        self.stext.SetFont(font)
+
+        self.stext.SetForegroundColour(text_colour)
+        self.Update()
+        self.Refresh()
 
 
     def close(self):

@@ -19,7 +19,8 @@ import sys
 from utilities.filesearchutilities import get_files_from_arguments
 from collections import OrderedDict
 
-PYLINT_OPTS = "--output-format=colorized --reports=n --max-line-length=120 --disable=R0904"
+
+PYLINT_OPTS = "--rcfile=%s" % os.path.join(os.path.dirname(os.path.abspath(__file__)), "pylint.rc")
 PEP8_OPTS = "--max-line-length=120 --ignore=E3 --format=pylint"
 PYFLAKES_OPTS = ""
 

@@ -23,46 +23,12 @@ class DolstTopFrame(wx.Frame):
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         width, _ = self.GetClientSizeTuple()
+
         self.item_list_panel = ItemsListPanel(self, width)
         sizer.Add(self.item_list_panel, 0, wx.EXPAND, 1)
 
-        self.menubar = create_menu_bar()
+        self.menubar = create_menu_bar(self)
         self.SetMenuBar(self.menubar)
-
-        self._setup_development_menu()
-
-        self.item_list_panel.SetFocus()
-
-
-    def cb_on_key_down(self, event):
-        """
-        handler for keypressess events
-        """
-        key = event.GetKeyCode()
-        print "Got key %s" % key
-
-        if self._secret_key_unlocked_state is False:
-            if ((key == 70) and  # key f
-                    event.controlDown and
-                    event.altDown):
-                self._secret_key_unlocked_state = True
-        else:
-            self._secret_key_unlocked_state = False
-            if ((key == 83) and  # key j
-                    event.controlDown and
-                    event.altDown):
-                # install the secret menu
-                from experiments.main_menu import add_development_menu
-                add_development_menu(self.menubar)
-
-        event.Skip()
-
-
-    def _setup_development_menu(self):
-        """
-        setup a method to enable the development menu
-        """
-        self._secret_key_unlocked_state = False
 
 
 def main():

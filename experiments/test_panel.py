@@ -25,7 +25,7 @@ class DolstTopFrame(wx.Frame):
         width, _ = self.GetClientSizeTuple()
 
         self.item_list_panel = ItemsListPanel(self, width)
-        sizer.Add(self.item_list_panel, 0, wx.EXPAND, 1)
+        sizer.Add(self.item_list_panel, 0, wx.EXPAND|wx.ALL, 1)
 
         self.menubar = create_menu_bar(self)
         self.SetMenuBar(self.menubar)

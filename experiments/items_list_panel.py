@@ -12,7 +12,7 @@ from experiments.line_items_panel import LineItemsPanel
 
 class ItemsListPanel(wx.Panel):
     """
-    Panel to hold a list of lint item panels.
+    Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
     def __init__(self, parent, width):

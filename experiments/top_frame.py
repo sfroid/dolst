@@ -11,6 +11,8 @@ Create a experimental panel which contains
 
 import wx
 from utilities.log_utils import set_logging_level_to_debug
+from experiments.splitter_widget import SplitterPane
+from experiments.category_panel import CategoryListPanel
 from experiments.items_list_panel import ItemsListPanel
 from experiments.main_menu import create_menu_bar
 
@@ -21,11 +23,8 @@ class DolstTopFrame(wx.Frame):
     def __init__(self, title, size):
         wx.Frame.__init__(self, None, -1, title=title, size=size)
 
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        width, _ = self.GetClientSizeTuple()
-
-        self.item_list_panel = ItemsListPanel(self, width)
-        sizer.Add(self.item_list_panel, 0, wx.EXPAND | wx.ALL, 1)
+        splitter = SplitterPane(self, -1)
+        splitter.add_panels(CategoryListPanel, ItemsListPanel, 125)
 
         self.menubar = create_menu_bar(self)
         self.SetMenuBar(self.menubar)

@@ -11,6 +11,7 @@ VIEW_SETTINGS = {
     'categories_width': 100,
     'lists_visible': True,
     'lists_width': 100,
+    'background_color': "#ffffff",
 }
 
 APP_SETTINGS = {

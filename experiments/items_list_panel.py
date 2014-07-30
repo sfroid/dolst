@@ -12,22 +12,24 @@ from experiments.line_items_panel import LineItemsPanel
 
 class ItemsListPanel(wx.Panel):
     """
-    Panel to hold a list of lint item panels.
+    Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
     def __init__(self, parent, width):
         wx.Panel.__init__(self, parent, -1, size=(width, -1))
         self.border = 1
+        self.padding = 5
         self.width = width
         self.line_item_panels = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer = sizer
+        self.sizer.Add((0, self.padding))
 
         for cdx1 in range(10):
             text = "Item %s" % (cdx1 + 1)
             line_item_panel = self.create_line(text, self.width, self.border)
-            sizer.Add(line_item_panel, 0, wx.EXPAND | wx.ALL, self.border)
+            sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.append(line_item_panel)
 
         self.SetSizer(sizer)
@@ -120,11 +122,11 @@ class ItemsListPanel(wx.Panel):
         line_item_panel = self.create_line("", self.width, self.border)
 
         if pos == len(self.line_item_panels) - 1:
-            self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.ALL, self.border)
+            self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.append(line_item_panel)
         else:
             self.sizer.Insert(pos + 1, line_item_panel, 0,
-                              wx.EXPAND | wx.ALL, self.border)
+                              wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.insert(pos + 1, line_item_panel)
 
         self.sizer.Fit(self)

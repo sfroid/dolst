@@ -1,3 +1,4 @@
+
 [MASTER]
 
 # Specify a configuration file.
@@ -20,12 +21,6 @@ persistent=yes
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
 load-plugins=
-
-# DEPRECATED
-include-ids=no
-
-# DEPRECATED
-symbols=no
 
 
 [MESSAGES CONTROL]
@@ -304,10 +299,10 @@ max-statements=50
 max-parents=7
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=7
+max-attributes=15
 
 # Minimum number of public methods for a class (see R0903).
-min-public-methods=2
+min-public-methods=0
 
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=20

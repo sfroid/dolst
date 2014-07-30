@@ -8,7 +8,6 @@ The Line panel which holds the editable text and other widgets.
 import wx
 from experiments.editable_text import EditableText
 
-
 class LineItemsPanel(wx.Panel):
     """
     A wx.Panel which holds a line of elements like
@@ -21,17 +20,23 @@ class LineItemsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, size=(width, -1))
         self.text = text
         self.end_edit_callbacks = []
-
         border = 0
 
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.checkbox = wx.CheckBox(self, -1)
+        # hack to get rid of the empty checkbox label holder outline
+        test_checkbox = wx.CheckBox(self, -1, pos=(-100, -100))
+        size = test_checkbox.GetSize()
+        # Without the callafter, we get a crash on mac
+        # Not unexpectedly, as we are not in the mainloop yet
+        wx.CallAfter(self.RemoveChild, test_checkbox)
+
+        new_size = (size[0] - 4, size[1])
+        checkbox_panel = wx.Panel(self, -1, size=new_size)
+        self.checkbox = wx.CheckBox(checkbox_panel, -1)
         self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
-
-        sizer.Add(self.checkbox, 0)
-
-        checkbox_width = self.checkbox.GetSize()[0]
+        sizer.Add(checkbox_panel, 0)
+        checkbox_width = new_size[0]
 
         self.text_editor = EditableText(self, text, width=(width - 2 * border - checkbox_width))
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)

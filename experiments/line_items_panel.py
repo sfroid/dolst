@@ -16,8 +16,8 @@ class LineItemsPanel(wx.Panel):
     This can also be dragged, but drag drop is handled by the
     parent widget (another wx panel probably).
     """
-    def __init__(self, parent, text, width=-1):
-        wx.Panel.__init__(self, parent, size=(width, -1))
+    def __init__(self, parent, text):
+        wx.Panel.__init__(self, parent)
         self.text = text
         self.end_edit_callbacks = []
         border = 0
@@ -38,10 +38,10 @@ class LineItemsPanel(wx.Panel):
         sizer.Add(checkbox_panel, 0)
         checkbox_width = new_size[0]
 
-        self.text_editor = EditableText(self, text, width=(width - 2 * border - checkbox_width))
+        self.text_editor = EditableText(self, text)
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
-        sizer.Add(self.text_editor, 1, wx.EXPAND | wx.ALL, 0)
+        sizer.Add(self.text_editor, 1, wx.EXPAND)
 
         self.SetSizer(sizer)
         self.Layout()

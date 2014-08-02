@@ -13,10 +13,9 @@ class CategoryListPanel(wx.Panel):
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
-    def __init__(self, parent, width):
+    def __init__(self, parent):
         wx.Panel.__init__(self, parent, -1)
         self.border = 5
-        self.width = width
 
         self.list_items_names = []
 
@@ -35,7 +34,7 @@ class CategoryListPanel(wx.Panel):
         new_list.sort()
         self.list_items_names = new_list
         pos = new_list.index(item)
-        item = EditableText(self, item, self.width - 2*self.border)
+        item = EditableText(self, item)
         if pos == len(new_list) - 1:
             self.sizer.Add(item, flag=wx.LEFT | wx.RIGHT, border=self.border)
         else:

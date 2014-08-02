@@ -15,11 +15,10 @@ class ItemsListPanel(wx.Panel):
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
-    def __init__(self, parent, width):
-        wx.Panel.__init__(self, parent, -1, size=(width, -1))
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent, -1)
         self.border = 1
         self.padding = 5
-        self.width = width
         self.line_item_panels = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -28,7 +27,7 @@ class ItemsListPanel(wx.Panel):
 
         for cdx1 in range(10):
             text = "Item %s" % (cdx1 + 1)
-            line_item_panel = self.create_line(text, self.width, self.border)
+            line_item_panel = self.create_line(text)
             sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.append(line_item_panel)
 
@@ -88,11 +87,11 @@ class ItemsListPanel(wx.Panel):
         self._set_focus_on_item_for_edit(pos + 1)
 
 
-    def create_line(self, text, width, border):
+    def create_line(self, text):
         """
         Create a line_item, bind callbacks, and return item
         """
-        line_item = LineItemsPanel(self, text, width - 2 * border)
+        line_item = LineItemsPanel(self, text)
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
         return line_item
@@ -106,8 +105,9 @@ class ItemsListPanel(wx.Panel):
         pos = self.line_item_panels.index(item)
         self.line_item_panels.pop(pos)
         self.sizer.Remove(pos)
-        self.sizer.Fit(self)
         self.Layout()
+
+        wx.CallAfter(self.RemoveChild, item)
         wx.CallAfter(item.close)
 
         self._set_focus_on_item_for_edit(pos - 1)
@@ -119,7 +119,7 @@ class ItemsListPanel(wx.Panel):
         Also sets focus at that item.
         """
 
-        line_item_panel = self.create_line("", self.width, self.border)
+        line_item_panel = self.create_line("")
 
         if pos == len(self.line_item_panels) - 1:
             self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)

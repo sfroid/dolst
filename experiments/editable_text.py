@@ -7,33 +7,36 @@ Editable text panel
 
 import wx
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
+from experiments.wxUtils import shiftedAndExpanded
 
 class EditableText(wx.Panel):
     """
     A text field that allows inline editing when the user click on it.
     """
-    def __init__(self, parent, text, width=-1):
-        wx.Panel.__init__(self, parent, size=(width, -1))
+    def __init__(self, parent, text):
+        wx.Panel.__init__(self, parent)
 
         self.text = text
         self.escape_pressed = False
-        self.width = width
         self.end_edit_callbacks = []
         self.tab_pressed_callbacks = []
         self.del_in_empty_callbacks = []
 
         textpos = get_editable_text_pos()
 
-        self.stext = wx.StaticText(self, -1, text, pos=textpos, size=(width, -1))
-        self._set_static_text_size()
+        self.stext = wx.StaticText(self, -1, self.text)
+        sizer = shiftedAndExpanded(self.stext, textpos, wx.LEFT)
+
         self.stext.Bind(wx.EVT_LEFT_UP, self.cb_on_mouse_left_up)
 
-        self.text_editor = wx.TextCtrl(self, -1, text, size=self.stext.GetSize())
+        self.text_editor = wx.TextCtrl(self, -1, self.text, size=self.stext.GetSize())
         self.text_editor.Bind(wx.EVT_KEY_DOWN, self._on_key_down_in_edit)
         self.text_editor.Bind(wx.EVT_KILL_FOCUS, self.cb_on_editor_lost_focus)
         self.text_editor.Hide()
 
         self._default_text_props = self._get_default_text_props()
+
+        self.SetSizer(sizer)
         self.Layout()
 
 
@@ -50,16 +53,6 @@ class EditableText(wx.Panel):
             'strikethrough': strikethrough,
             'text_colour': text_colour,
         }
-
-
-    def _set_static_text_size(self):
-        """
-        The default text size / spacing is not aesthetic, so we give a
-        bit of padding around the text.
-        """
-        size = self.stext.GetSize()
-        size = (self.width, size[1] + 4)
-        self.stext.SetSize(size)
 
 
     def cb_on_mouse_left_up(self, event=None):
@@ -92,7 +85,6 @@ class EditableText(wx.Panel):
 
         self.text_editor.Show()
         self.text_editor.SetFocus()
-        self.Refresh()
 
 
     def callback_on_end_edit(self, callback):
@@ -208,12 +200,12 @@ class EditableText(wx.Panel):
         if save:
             self.text = self.text_editor.GetValue()
             self.stext.Label = self.text
-            self._set_static_text_size()
 
         self.text_editor.Hide()
         self.stext.Show()
 
         self._call_end_edit_callbacks(reason)
+        self.Layout()
 
 
     def set_text_properties(self, props):
@@ -231,9 +223,6 @@ class EditableText(wx.Panel):
             # colour can be in #rrggbb(aa) aa optional
             text_colour = props['text_colour']
             self.stext.SetForegroundColour(text_colour)
-
-        self.Update()
-        self.Refresh()
 
     def reset_text_properties(self):
         """

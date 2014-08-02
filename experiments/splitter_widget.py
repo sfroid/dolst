@@ -18,7 +18,6 @@ class SplitterPane(wx.SplitterWindow):
     def add_panels(self, panel_class1, panel_class2, min_width):
         sty = wx.BORDER_SUNKEN
 
-
         self.left_panel = panel_class1(self, min_width)
         self.left_panel.SetBackgroundColour("white")
 

@@ -25,11 +25,11 @@ class ItemsListPanel(wx.Panel):
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
 
-        for cdx1 in range(10):
-            text = "Item %s" % (cdx1 + 1)
-            line_item_panel = self.create_line(text)
-            sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
-            self.line_item_panels.append(line_item_panel)
+        #for cdx1 in range(10):
+            #text = "Item %s" % (cdx1 + 1)
+            #line_item_panel = self.create_line(text)
+            #sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
+            #self.line_item_panels.append(line_item_panel)
 
         self.SetSizer(sizer)
         self.Layout()
@@ -129,7 +129,6 @@ class ItemsListPanel(wx.Panel):
                               wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.insert(pos + 1, line_item_panel)
 
-        self.sizer.Fit(self)
         self.Layout()
 
 
@@ -141,3 +140,19 @@ class ItemsListPanel(wx.Panel):
             pos = pos % len(self.line_item_panels)
             item = self.line_item_panels[pos]
             item.set_focus_and_startedit()
+
+
+    def clear_and_add_items(self, data):
+        """
+        clears all the items and adds
+        items from data
+        """
+        self.line_item_panels = []
+        self.sizer.Clear(True)
+
+        for dt in data:
+            line_item_panel = self.create_line(dt)
+            self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
+            self.line_item_panels.append(line_item_panel)
+
+        self.Layout()

@@ -7,7 +7,8 @@ Editable text panel
 
 import wx
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
-from experiments.wxUtils import shiftedAndExpanded
+from experiments.wxUtils import shifted_and_expanded, get_top_frame
+from experiments.event_bus import notify_category_sel_event
 
 class EditableText(wx.Panel):
     """
@@ -18,6 +19,7 @@ class EditableText(wx.Panel):
 
         self.text = text
         self.escape_pressed = False
+        self.editing_text = False
         self.end_edit_callbacks = []
         self.tab_pressed_callbacks = []
         self.del_in_empty_callbacks = []
@@ -25,7 +27,7 @@ class EditableText(wx.Panel):
         textpos = get_editable_text_pos()
 
         self.stext = wx.StaticText(self, -1, self.text)
-        sizer = shiftedAndExpanded(self.stext, textpos, wx.LEFT)
+        sizer = shifted_and_expanded(self.stext, textpos, wx.LEFT)
 
         self.stext.Bind(wx.EVT_LEFT_UP, self.cb_on_mouse_left_up)
 
@@ -85,6 +87,7 @@ class EditableText(wx.Panel):
 
         self.text_editor.Show()
         self.text_editor.SetFocus()
+        self.editing_text = True
 
 
     def callback_on_end_edit(self, callback):
@@ -203,6 +206,7 @@ class EditableText(wx.Panel):
 
         self.text_editor.Hide()
         self.stext.Show()
+        self.editing_text = False
 
         self._call_end_edit_callbacks(reason)
         self.Layout()
@@ -250,3 +254,87 @@ class EditableText(wx.Panel):
         self._on_end_edit(False, None)
         self.DestroyChildren()
         self.Destroy()
+
+
+class DoubleClickEditor(EditableText):
+    def __init__(self, parent, text):
+        EditableText.__init__(self, parent, text)
+
+        self.selected = False
+        self.selected_callbacks = []
+        self.stext.Bind(wx.EVT_LEFT_DCLICK, self.cb_on_mouse_dblclick)
+        self.SetBackgroundColour("#ffffff")
+
+
+    def cb_on_mouse_dblclick(self, event):
+        """
+        Called on a mouse left double click
+        """
+        self.start_edit()
+
+
+    def cb_on_mouse_left_up(self, event):
+        """
+        Override parent class method.
+        Set current as selected.
+        """
+        if self.selected is False:
+            self._call_selected_callbacks()
+
+
+    def callback_on_selection(self, callback):
+        """
+        Set a callback to be called when an edit finishes.
+        The callback is called with arguments
+        callback(self, reason)
+        """
+        if callback not in self.selected_callbacks:
+            self.selected_callbacks.append(callback)
+
+    def _call_selected_callbacks(self):
+        """
+        Call the end edit callbacks with the reason.
+        """
+        for callback in self.selected_callbacks:
+            callback(self)
+
+
+    def set_selected(self):
+        """
+        Set selected style
+        """
+        self.selected = True
+        self._set_background_color("focused")
+
+
+    def clear_selected(self):
+        """
+        Clear selection style
+        """
+        self.selected = False
+        self._set_background_color("blur")
+
+
+    def _set_background_color(self, state):
+        if state == "focused":
+            self.SetBackgroundColour("#ddddff")
+            self.SetForegroundColour("#000000")
+            font = self.stext.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_BOLD)
+        else:
+            self.SetBackgroundColour("#ffffff")
+            self.SetForegroundColour("#333333")
+            #self.stext.SetForegroundColour("#333333")
+            font = self.stext.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_NORMAL)
+        self.stext.SetFont(font)
+        self.Layout()
+
+
+def stop_editing_category_name(item):
+    """
+    Finish editing on edited window
+    """
+    if item.editing_text is True:
+        item._on_end_edit(True, "lost_focus")
+        print "finished editing"

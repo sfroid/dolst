@@ -24,10 +24,16 @@ class DolstTopFrame(wx.Frame):
         wx.Frame.__init__(self, None, -1, title=title, size=size)
 
         splitter = SplitterPane(self, -1)
-        splitter.add_panels(CategoryListPanel, ItemsListPanel, 125)
+        cat_panel, items_panel = splitter.add_panels(CategoryListPanel, ItemsListPanel, 125)
+
+        self.category_panel = cat_panel
+        self.items_panel = items_panel
 
         self.menubar = create_menu_bar(self)
         self.SetMenuBar(self.menubar)
+
+    def update_category_view(self, data):
+        self.category_panel.update_data(data)
 
 
 def main():

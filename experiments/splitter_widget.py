@@ -27,6 +27,8 @@ class SplitterPane(wx.SplitterWindow):
         self.SetMinimumPaneSize(min_width)
         self.SplitVertically(self.left_panel, self.right_panel, min_width)
 
+        return self.left_panel, self.right_panel
+
 
     def OnSashChanged(self, evt):
         logging.info("sash changed to %s\n" % str(evt.GetSashPosition()))

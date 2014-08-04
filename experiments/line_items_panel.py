@@ -32,16 +32,18 @@ class LineItemsPanel(wx.Panel):
         wx.CallAfter(self.RemoveChild, test_checkbox)
 
         new_size = (size[0] - 4, size[1])
-        checkbox_panel = wx.Panel(self, -1, size=new_size)
-        self.checkbox = wx.CheckBox(checkbox_panel, -1)
+        self.checkbox_panel = wx.Panel(self, -1, size=new_size)
+        self.checkbox = wx.CheckBox(self.checkbox_panel, -1)
         self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
-        sizer.Add(checkbox_panel, 0)
+        sizer.Add(self.checkbox_panel, 0)
         checkbox_width = new_size[0]
 
         self.text_editor = EditableText(self, text)
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
         sizer.Add(self.text_editor, 1, wx.EXPAND)
+
+        self.set_background_color("#ffffff")
 
         self.SetSizer(sizer)
         self.Layout()
@@ -139,3 +141,7 @@ class LineItemsPanel(wx.Panel):
         self.text_editor.close()
         self.DestroyChildren()
         self.Destroy()
+
+    def set_background_color(self, color):
+        self.checkbox_panel.SetBackgroundColour(color)
+        self.text_editor.SetBackgroundColour(color)

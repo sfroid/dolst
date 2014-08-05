@@ -17,16 +17,15 @@ class LineItemsPanel(wx.Panel):
     This can also be dragged, but drag drop is handled by the
     parent widget (another wx panel probably).
     """
-    def __init__(self, parent, parentItem, previousItem, data):
+    def __init__(self, parent, parent_item, previous_item, data):
         wx.Panel.__init__(self, parent)
 
-        self.parentItem = parentItem
-        self.previousItem = previousItem
+        self.parent_item = parent_item
+        self.previous_item = previous_item
 
         self.text, self.idx, self.complete, self.level = data
         self.end_edit_callbacks = []
-        self.childItems = []
-        border = 0
+        self.child_items = []
 
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -47,7 +46,6 @@ class LineItemsPanel(wx.Panel):
         self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
         self.checkbox.SetValue(self.complete)
         sizer.Add(self.checkbox_panel, 0)
-        checkbox_width = new_size[0]
 
         self.text_editor = EditableText(self, self.text)
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
@@ -55,8 +53,7 @@ class LineItemsPanel(wx.Panel):
         sizer.Add(self.text_editor, 1, wx.EXPAND)
 
         if self.level > 0:
-            for _ignore in range(self.level):
-                self.sizer.Insert(0, (15, 0))
+            self.sizer.Insert(0, (20 * self.level, 0))
 
         self.set_background_color("#ffffff")
         self.update_text_view()
@@ -70,7 +67,7 @@ class LineItemsPanel(wx.Panel):
         """
         append a child item to this item
         """
-        self.childItems.append(child)
+        self.child_items.append(child)
 
 
     def cb_on_tab_pressed(self, item, shift_pressed):

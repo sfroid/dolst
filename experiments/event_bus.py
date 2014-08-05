@@ -6,7 +6,6 @@ data modification changes, etc go here.
 """
 
 import wx
-import sys
 import wx.lib.newevent
 
 
@@ -31,20 +30,20 @@ def get_event_bus():
     Creates it too, if it does not exist yet.
     """
     # our singleton eventbus lives here
-    if EventBus.singleton_event_bus == None:
+    if EventBus.singleton_event_bus is None:
         event_bus = EventBus()
         EventBus.singleton_event_bus = event_bus
 
     return EventBus.singleton_event_bus
 
 
-def call_on_category_sel_event(cb):
+def call_on_category_sel_event(callback):
     """
     Register a cb to be called when a
     category selection event occurs
     """
     eventbus = get_event_bus()
-    eventbus.Bind(EVT_CAT_SEL_CHANGED, cb)
+    eventbus.Bind(EVT_CAT_SEL_CHANGED, callback)
 
 
 def notify_category_sel_event(item):
@@ -63,7 +62,7 @@ def test2():
     """
     eventbus = get_event_bus()
 
-    def _test3(event):
+    def cb_test3(event):
         """
         event callback function
         """
@@ -71,11 +70,11 @@ def test2():
 
     # create an event
     print "creating and binding the event"
-    SomeNewEvent, EVT_SOME_NEW_EVENT = wx.lib.newevent.NewEvent()
-    eventbus.Bind(EVT_SOME_NEW_EVENT, _test3)
+    some_new_event, evt_some_new_event = wx.lib.newevent.NewEvent()
+    eventbus.Bind(evt_some_new_event, cb_test3)
 
     print "firing the event"
-    evt = SomeNewEvent(attr1="what's up")
+    evt = some_new_event(attr1="what's up")
     wx.PostEvent(eventbus, evt)
 
 

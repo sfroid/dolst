@@ -7,8 +7,7 @@ Editable text panel
 
 import wx
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
-from experiments.wxUtils import shifted_and_expanded, get_top_frame
-from experiments.event_bus import notify_category_sel_event
+from experiments.wx_utils import shifted_and_expanded
 
 class EditableText(wx.Panel):
     """
@@ -193,6 +192,14 @@ class EditableText(wx.Panel):
             return
         self._on_end_edit(True, 'lost_focus')
 
+    def end_edit(self, save, reason):
+        """
+        Called to end editing
+        """
+        if self.editing_text is True:
+            self._on_end_edit(save, reason)
+
+
 
     def _on_end_edit(self, save, reason):
         """
@@ -257,6 +264,9 @@ class EditableText(wx.Panel):
 
 
 class DoubleClickEditor(EditableText):
+    """
+    Line editor for categories
+    """
     def __init__(self, parent, text):
         EditableText.__init__(self, parent, text)
 
@@ -273,7 +283,7 @@ class DoubleClickEditor(EditableText):
         self.start_edit()
 
 
-    def cb_on_mouse_left_up(self, event):
+    def cb_on_mouse_left_up(self, event=None):
         """
         Override parent class method.
         Set current as selected.
@@ -316,6 +326,9 @@ class DoubleClickEditor(EditableText):
 
 
     def _set_background_color(self, state):
+        """
+        Set background and foreground color for selected category
+        """
         if state == "focused":
             self.SetBackgroundColour("#ddddff")
             self.SetForegroundColour("#000000")
@@ -324,7 +337,6 @@ class DoubleClickEditor(EditableText):
         else:
             self.SetBackgroundColour("#ffffff")
             self.SetForegroundColour("#333333")
-            #self.stext.SetForegroundColour("#333333")
             font = self.stext.GetFont()
             font.SetWeight(wx.FONTWEIGHT_NORMAL)
         self.stext.SetFont(font)
@@ -336,5 +348,5 @@ def stop_editing_category_name(item):
     Finish editing on edited window
     """
     if item.editing_text is True:
-        item._on_end_edit(True, "lost_focus")
+        item.end_edit(True, "lost_focus")
         print "finished editing"

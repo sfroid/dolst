@@ -25,12 +25,6 @@ class ItemsListPanel(wx.Panel):
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
 
-        #for cdx1 in range(10):
-            #text = "Item %s" % (cdx1 + 1)
-            #line_item_panel = self.create_line(text)
-            #sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
-            #self.line_item_panels.append(line_item_panel)
-
         self.SetSizer(sizer)
         self.Layout()
         sizer.Fit(self)
@@ -83,15 +77,15 @@ class ItemsListPanel(wx.Panel):
             return
 
         print "inserting new item in pos : %s" % pos
-        self._insert_new_item(pos)
+        self._insert_new_item(pos, line_item_panel.parent_item, line_item_panel)
         self._set_focus_on_item_for_edit(pos + 1)
 
 
-    def create_line(self, parentItem, previousItem, data):
+    def create_line(self, parent_item, previous_item, data):
         """
         Create a line_item, bind callbacks, and return item
         """
-        line_item = LineItemsPanel(self, parentItem, previousItem, data)
+        line_item = LineItemsPanel(self, parent_item, previous_item, data)
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
         return line_item
@@ -113,13 +107,14 @@ class ItemsListPanel(wx.Panel):
         self._set_focus_on_item_for_edit(pos - 1)
 
 
-    def _insert_new_item(self, pos):
+    def _insert_new_item(self, pos, parent_item, previous_item):
         """
         Insert new line item at pos (or at end if pos at end)
         Also sets focus at that item.
         """
 
-        line_item_panel = self.create_line("")
+        line_item_panel = self.create_line(parent_item, previous_item,
+                                           ("", 23423, False, parent_item.level))
 
         if pos == len(self.line_item_panels) - 1:
             self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
@@ -155,16 +150,24 @@ class ItemsListPanel(wx.Panel):
         self.add_items(data, parent, previous, level)
         self.Layout()
 
+
     def add_items(self, data, parent, previous, level):
+        """
+        Recursive method to add a bunch of items in data provided as
+        a tuple of tuples.
+        """
         for dt in data:
             text, idx, comp, children = dt
             previous = item = self.create_and_add_item(parent, previous, (text, idx, comp, level))
             if len(children) > 0:
-                previous = self.add_items(children, item, previous, level+1)
+                previous = self.add_items(children, item, previous, level + 1)
         return previous
 
 
     def create_and_add_item(self, parent, previous, data):
+        """
+        Handles a single item
+        """
         line_item = self.create_line(parent, previous, data)
         self.sizer.Add(line_item, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
         self.line_item_panels.append(line_item)
@@ -174,5 +177,8 @@ class ItemsListPanel(wx.Panel):
 
 
     def clear_all(self):
+        """
+        Removes all the items form the panel
+        """
         self.line_item_panels = []
         self.sizer.Clear(True)

@@ -27,8 +27,9 @@ def shifted_and_expanded(widget, shift, flags=0):
     sizer.Add(widget, 0, wx.EXPAND | flags, shift[0])
     return sizer
 
+
 def get_top_frame():
     """
     Returns the top level frame of the app
     """
-    return wx.GetApp()._view_top_frame
+    return wx.GetApp().view_top_frame

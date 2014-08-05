@@ -16,8 +16,13 @@ from experiments.main_menu import create_menu_bar
 
 
 def expanded(widget, padding=0):
+    """
+    Helper method to wrap a window in
+    a vertical sizer so it takes maximum space
+    available in the horizontal direction
+    """
     sizer = wx.BoxSizer(wx.VERTICAL)
-    sizer.Add(widget, 0, wx.EXPAND|wx.ALL, padding)
+    sizer.Add(widget, 0, wx.EXPAND | wx.ALL, padding)
     return sizer
 
 
@@ -30,8 +35,6 @@ class DolstTopFrame(wx.Frame):
 
         splitter = SplitterPane(self, -1)
 
-        #sty = wx.BORDER_NONE
-        #sty = wx.BORDER_SIMPLE
         sty = wx.BORDER_SUNKEN
 
         p1 = wx.Panel(splitter, style=sty)

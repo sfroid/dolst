@@ -6,7 +6,6 @@ Items List Panel
 """
 
 import wx
-import logging
 from experiments.editable_text import DoubleClickEditor, stop_editing_category_name
 from experiments.event_bus import notify_category_sel_event
 
@@ -35,7 +34,7 @@ class CategoryListPanel(wx.Panel):
         """
         Clear focus from the editor if its currently editing
         """
-        if not self.current_selection is None:
+        if self.current_selection is not None:
             stop_editing_category_name(self.current_selection)
 
 
@@ -64,16 +63,14 @@ class CategoryListPanel(wx.Panel):
         Called when a category is clicked on
         """
         old_selection = self.current_selection
-        if not old_selection is None:
+        if old_selection is not None:
             # clear old selection / close editing if required
             old_selection.clear_selected()
-            if old_selection.editing_text is True:
-                old_selection._on_end_edit(True, "lost_focus")
+            old_selection.end_edit(True, "lost_focus")
 
         self.current_selection = item
         item.set_selected()
         notify_category_sel_event(item)
-
 
 
     def add_items(self, data):

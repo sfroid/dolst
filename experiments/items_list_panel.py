@@ -87,11 +87,11 @@ class ItemsListPanel(wx.Panel):
         self._set_focus_on_item_for_edit(pos + 1)
 
 
-    def create_line(self, text):
+    def create_line(self, parentItem, previousItem, data):
         """
         Create a line_item, bind callbacks, and return item
         """
-        line_item = LineItemsPanel(self, text)
+        line_item = LineItemsPanel(self, parentItem, previousItem, data)
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
         return line_item
@@ -147,12 +147,32 @@ class ItemsListPanel(wx.Panel):
         clears all the items and adds
         items from data
         """
+        self.clear_all()
+
+        parent = None
+        previous = None
+        level = 0
+        self.add_items(data, parent, previous, level)
+        self.Layout()
+
+    def add_items(self, data, parent, previous, level):
+        for dt in data:
+            text, idx, comp, children = dt
+            previous = item = self.create_and_add_item(parent, previous, (text, idx, comp, level))
+            if len(children) > 0:
+                previous = self.add_items(children, item, previous, level+1)
+        return previous
+
+
+    def create_and_add_item(self, parent, previous, data):
+        line_item = self.create_line(parent, previous, data)
+        self.sizer.Add(line_item, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
+        self.line_item_panels.append(line_item)
+        if parent is not None:
+            parent.add_child(line_item)
+        return line_item
+
+
+    def clear_all(self):
         self.line_item_panels = []
         self.sizer.Clear(True)
-
-        for dt in data:
-            line_item_panel = self.create_line(dt)
-            self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
-            self.line_item_panels.append(line_item_panel)
-
-        self.Layout()

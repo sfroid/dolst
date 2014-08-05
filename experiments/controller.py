@@ -40,9 +40,11 @@ class Controller(object):
 
     def _get_items_data(self, category_name):
         from random import randint
-        return ["%s: Item %s" % ( category_name, x ) for x in range(randint(0, 5), randint(6, 10))]
+        return [self._dummy_get_item("%s: Item %s" % ( category_name, x )) for x in range(randint(0, 5), randint(6, 10))]
 
     def _update_items_view(self, data):
+        # TODO : make this a call into self.view
+        # rather than into view.items_panel
         self.view.items_panel.clear_and_add_items(data)
         pass
 
@@ -51,6 +53,16 @@ class Controller(object):
 
     def _update_items_data(self):
         pass
+
+    def _dummy_get_item(self, text, depth=3):
+        from random import randint
+        idx = randint(10000, 20000)
+        completed = (0 < randint(1, 10) < 6)
+        if depth > 0:
+            children = tuple([self._dummy_get_item("%s : Child %s" % (text, d), depth-1) for d in range(randint(0, 2))])
+        else:
+            children = []
+        return (text, idx, completed, children)
 
 
 

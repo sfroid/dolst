@@ -6,17 +6,18 @@ Items List Panel
 """
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 import logging
 from experiments.line_items_panel import LineItemsPanel
 
 
-class ItemsListPanel(wx.Panel):
+class ItemsListPanel(ScrolledPanel):
     """
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, -1)
+        ScrolledPanel.__init__(self, parent, -1)
         self.border = 1
         self.padding = 5
         self.line_item_panels = []
@@ -25,9 +26,12 @@ class ItemsListPanel(wx.Panel):
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
 
+        #sizer.Fit(self)
+
         self.SetSizer(sizer)
-        self.Layout()
-        sizer.Fit(self)
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
+        #self.Layout()
 
 
     def _on_end_line_item_textedit(self, item, reason):
@@ -88,7 +92,16 @@ class ItemsListPanel(wx.Panel):
         line_item = LineItemsPanel(self, parent_item, previous_item, data)
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
+        line_item.pass_scrolls_to(self.cb_mouse_wheel_on_item)
         return line_item
+
+    def cb_mouse_wheel_on_item(self, event):
+        """
+        called when mouse wheel is used on line items
+        event.GetWheelRotation() returns Down : 120, Up: -120
+        """
+        print "rotating wheel %s" % event.GetWheelRotation()
+
 
 
     def _on_del_empty_line(self, item):
@@ -124,7 +137,8 @@ class ItemsListPanel(wx.Panel):
                               wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.insert(pos + 1, line_item_panel)
 
-        self.Layout()
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
 
 
     def _set_focus_on_item_for_edit(self, pos):
@@ -148,7 +162,9 @@ class ItemsListPanel(wx.Panel):
         previous = None
         level = 0
         self.add_items(data, parent, previous, level)
-        self.Layout()
+
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
 
 
     def add_items(self, data, parent, previous, level):

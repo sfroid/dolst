@@ -177,3 +177,9 @@ class LineItemsPanel(wx.Panel):
         """
         self.checkbox_panel.SetBackgroundColour(color)
         self.text_editor.SetBackgroundColour(color)
+        self.SetBackgroundColour(color)
+
+    def pass_scrolls_to(self, cb):
+        self.Bind(wx.EVT_MOUSEWHEEL, cb)
+        self.text_editor.Bind(wx.EVT_MOUSEWHEEL, cb)
+        self.checkbox.Bind(wx.EVT_MOUSEWHEEL, cb)

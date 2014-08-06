@@ -6,17 +6,18 @@ Items List Panel
 """
 
 import wx
+from wx.lib.scrolledpanel import ScrolledPanel
 from experiments.editable_text import DoubleClickEditor, stop_editing_category_name
 from experiments.event_bus import notify_category_sel_event
 
 
-class CategoryListPanel(wx.Panel):
+class CategoryListPanel(ScrolledPanel):
     """
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, -1)
+        ScrolledPanel.__init__(self, parent, -1)
         self.border = 5
         self.list_items_names = []
         self.current_selection = None

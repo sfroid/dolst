@@ -12,9 +12,19 @@ Create a experimental panel which contains
 import wx
 from utilities.log_utils import set_logging_level_to_debug
 from experiments.splitter_widget import SplitterPane
-from experiments.category_panel import CategoryListPanel
-from experiments.items_list_panel import ItemsListPanel
 from experiments.main_menu import create_menu_bar
+
+
+def expanded(widget, padding=0):
+    """
+    Helper method to wrap a window in
+    a vertical sizer so it takes maximum space
+    available in the horizontal direction
+    """
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(widget, 0, wx.EXPAND | wx.ALL, padding)
+    return sizer
+
 
 class DolstTopFrame(wx.Frame):
     """
@@ -24,19 +34,24 @@ class DolstTopFrame(wx.Frame):
         wx.Frame.__init__(self, None, -1, title=title, size=size)
 
         splitter = SplitterPane(self, -1)
-        cat_panel, items_panel = splitter.add_panels(CategoryListPanel, ItemsListPanel, 125)
 
-        self.category_panel = cat_panel
-        self.items_panel = items_panel
+        sty = wx.BORDER_SUNKEN
+
+        p1 = wx.Panel(splitter, style=sty)
+        p1.SetBackgroundColour("white")
+        t1 = wx.StaticText(p1, -1, "Panel One")
+        p1.SetSizer(expanded(t1))
+
+        p2 = wx.Panel(splitter, style=sty)
+        p2.SetBackgroundColour("sky blue")
+        t2 = wx.StaticText(p2, -1, "Panel Two")
+        p2.SetSizer(expanded(t2))
+
+        splitter.SetMinimumPaneSize(20)
+        splitter.SplitVertically(p1, p2, 150)
 
         self.menubar = create_menu_bar(self)
         self.SetMenuBar(self.menubar)
-
-    def update_category_view(self, data):
-        """
-        Updates/Redraws the category view with the given data
-        """
-        self.category_panel.update_data(data)
 
 
 def main():

@@ -7,33 +7,38 @@ Editable text panel
 
 import wx
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
+from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
 
 class EditableText(wx.Panel):
     """
     A text field that allows inline editing when the user click on it.
     """
-    def __init__(self, parent, text, width=-1):
-        wx.Panel.__init__(self, parent, size=(width, -1))
+    def __init__(self, parent, text):
+        wx.Panel.__init__(self, parent)
 
         self.text = text
         self.escape_pressed = False
-        self.width = width
+        self.editing_text = False
         self.end_edit_callbacks = []
         self.tab_pressed_callbacks = []
         self.del_in_empty_callbacks = []
+        self.last_cursor_position = None
 
         textpos = get_editable_text_pos()
 
-        self.stext = wx.StaticText(self, -1, text, pos=textpos, size=(width, -1))
-        self._set_static_text_size()
+        self.stext = wx.StaticText(self, -1, self.text)
+        sizer = shifted_and_expanded(self.stext, textpos, wx.LEFT)
+
         self.stext.Bind(wx.EVT_LEFT_UP, self.cb_on_mouse_left_up)
 
-        self.text_editor = wx.TextCtrl(self, -1, text, size=self.stext.GetSize())
+        self.text_editor = wx.TextCtrl(self, -1, self.text, size=self.stext.GetSize())
         self.text_editor.Bind(wx.EVT_KEY_DOWN, self._on_key_down_in_edit)
         self.text_editor.Bind(wx.EVT_KILL_FOCUS, self.cb_on_editor_lost_focus)
         self.text_editor.Hide()
 
         self._default_text_props = self._get_default_text_props()
+
+        self.SetSizer(sizer)
         self.Layout()
 
 
@@ -52,24 +57,14 @@ class EditableText(wx.Panel):
         }
 
 
-    def _set_static_text_size(self):
-        """
-        The default text size / spacing is not aesthetic, so we give a
-        bit of padding around the text.
-        """
-        size = self.stext.GetSize()
-        size = (self.width, size[1] + 4)
-        self.stext.SetSize(size)
-
-
     def cb_on_mouse_left_up(self, event=None):
         """
         Handler for mouse click event
         """
-        self.start_edit()
+        self.start_edit(mouse_pos=event.GetPositionTuple())
 
 
-    def start_edit(self):
+    def start_edit(self, mouse_pos=None, insertion_point=None):
         """
         This method hides the uneditable static text field and replaces
         it with an editable textctrl containing the same text
@@ -92,7 +87,19 @@ class EditableText(wx.Panel):
 
         self.text_editor.Show()
         self.text_editor.SetFocus()
-        self.Refresh()
+
+        def set_insertion_point(editor, loc):
+            editor.SetInsertionPoint(loc)
+
+        if mouse_pos is not None:
+            caret_location = get_insertion_pos(self, self.text, mouse_pos)
+            print "loc = %s" % caret_location
+            wx.CallAfter(set_insertion_point, self.text_editor, caret_location)
+
+        if insertion_point is not None:
+            wx.CallAfter(set_insertion_point, self.text_editor, insertion_point)
+
+        self.editing_text = True
 
 
     def callback_on_end_edit(self, callback):
@@ -198,6 +205,14 @@ class EditableText(wx.Panel):
             return
         self._on_end_edit(True, 'lost_focus')
 
+    def end_edit(self, save, reason):
+        """
+        Called to end editing
+        """
+        if self.editing_text is True:
+            self._on_end_edit(save, reason)
+
+
 
     def _on_end_edit(self, save, reason):
         """
@@ -208,12 +223,14 @@ class EditableText(wx.Panel):
         if save:
             self.text = self.text_editor.GetValue()
             self.stext.Label = self.text
-            self._set_static_text_size()
 
+        self.last_cursor_position = self.text_editor.GetInsertionPoint()
         self.text_editor.Hide()
         self.stext.Show()
+        self.editing_text = False
 
         self._call_end_edit_callbacks(reason)
+        self.Layout()
 
 
     def set_text_properties(self, props):
@@ -231,9 +248,6 @@ class EditableText(wx.Panel):
             # colour can be in #rrggbb(aa) aa optional
             text_colour = props['text_colour']
             self.stext.SetForegroundColour(text_colour)
-
-        self.Update()
-        self.Refresh()
 
     def reset_text_properties(self):
         """
@@ -261,3 +275,101 @@ class EditableText(wx.Panel):
         self._on_end_edit(False, None)
         self.DestroyChildren()
         self.Destroy()
+
+
+    def pass_wheel_scrolls_to(self, callback):
+        """
+        Bind mouse wheel event to the callback
+        """
+        self.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.stext.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.text_editor.Bind(wx.EVT_MOUSEWHEEL, callback)
+
+
+class DoubleClickEditor(EditableText):
+    """
+    Line editor for categories
+    """
+    def __init__(self, parent, text):
+        EditableText.__init__(self, parent, text)
+
+        self.selected = False
+        self.selected_callbacks = []
+        self.stext.Bind(wx.EVT_LEFT_DCLICK, self.cb_on_mouse_dblclick)
+        self.SetBackgroundColour("#ffffff")
+
+
+    def cb_on_mouse_dblclick(self, event):
+        """
+        Called on a mouse left double click
+        """
+        self.start_edit(mouse_pos=event.GetPositionTuple())
+
+
+    def cb_on_mouse_left_up(self, event=None):
+        """
+        Override parent class method.
+        Set current as selected.
+        """
+        if self.selected is False:
+            self._call_selected_callbacks()
+
+
+    def callback_on_selection(self, callback):
+        """
+        Set a callback to be called when an edit finishes.
+        The callback is called with arguments
+        callback(self, reason)
+        """
+        if callback not in self.selected_callbacks:
+            self.selected_callbacks.append(callback)
+
+    def _call_selected_callbacks(self):
+        """
+        Call the end edit callbacks with the reason.
+        """
+        for callback in self.selected_callbacks:
+            callback(self)
+
+
+    def set_selected(self):
+        """
+        Set selected style
+        """
+        self.selected = True
+        self._set_background_color("focused")
+
+
+    def clear_selected(self):
+        """
+        Clear selection style
+        """
+        self.selected = False
+        self._set_background_color("blur")
+
+
+    def _set_background_color(self, state):
+        """
+        Set background and foreground color for selected category
+        """
+        if state == "focused":
+            self.SetBackgroundColour("#ddddff")
+            self.SetForegroundColour("#000000")
+            font = self.stext.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_BOLD)
+        else:
+            self.SetBackgroundColour("#ffffff")
+            self.SetForegroundColour("#333333")
+            font = self.stext.GetFont()
+            font.SetWeight(wx.FONTWEIGHT_NORMAL)
+        self.stext.SetFont(font)
+        self.Layout()
+
+
+def stop_editing_category_name(item):
+    """
+    Finish editing on edited window
+    """
+    if item.editing_text is True:
+        item.end_edit(True, "lost_focus")
+        print "finished editing"

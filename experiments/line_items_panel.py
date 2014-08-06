@@ -6,6 +6,7 @@ The Line panel which holds the editable text and other widgets.
 """
 
 import wx
+import logging
 from experiments.editable_text import EditableText
 
 class LineItemsPanel(wx.Panel):
@@ -16,36 +17,86 @@ class LineItemsPanel(wx.Panel):
     This can also be dragged, but drag drop is handled by the
     parent widget (another wx panel probably).
     """
-    def __init__(self, parent, text, width=-1):
-        wx.Panel.__init__(self, parent, size=(width, -1))
-        self.text = text
-        self.end_edit_callbacks = []
-        border = 0
+    def __init__(self, parent, parent_item, previous_item, data):
+        wx.Panel.__init__(self, parent)
 
+        self.parent_item = parent_item
+        self.previous_item = previous_item
+        self.next_item = None
+
+        self.text, self.idx, self.complete, self.level = data
+        self.end_edit_callbacks = []
+        self.child_items = []
+
+        self.do_layout()
+
+
+    def do_layout(self):
+        """
+        set the layout and background color
+        """
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # hack to get rid of the empty checkbox label holder outline
-        test_checkbox = wx.CheckBox(self, -1, pos=(-100, -100))
-        size = test_checkbox.GetSize()
-        # Without the callafter, we get a crash on mac
-        # Not unexpectedly, as we are not in the mainloop yet
-        wx.CallAfter(self.RemoveChild, test_checkbox)
+        if hasattr(LineItemsPanel, "checkbox_size"):
+            size = LineItemsPanel.checkbox_size
+        else:
+            # hack to get rid of the empty checkbox label holder outline
+            test_checkbox = wx.CheckBox(self, -1, pos=(-100, -100))
+            size = test_checkbox.GetSize()
+            LineItemsPanel.checkbox_size = size
+            # Without the callafter, we get a crash on mac
+            # Not unexpectedly, as we are not in the mainloop yet
+            wx.CallAfter(self.RemoveChild, test_checkbox)
 
         new_size = (size[0] - 4, size[1])
-        checkbox_panel = wx.Panel(self, -1, size=new_size)
-        self.checkbox = wx.CheckBox(checkbox_panel, -1)
+        self.checkbox_panel = wx.Panel(self, -1, size=new_size)
+        self.checkbox = wx.CheckBox(self.checkbox_panel, -1)
         self.checkbox.Bind(wx.EVT_CHECKBOX, self.cb_on_toggle_checkbox)
-        sizer.Add(checkbox_panel, 0)
-        checkbox_width = new_size[0]
+        self.checkbox.SetValue(self.complete)
+        sizer.Add(self.checkbox_panel, 0)
 
-        self.text_editor = EditableText(self, text, width=(width - 2 * border - checkbox_width))
+        self.text_editor = EditableText(self, self.text)
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
-        sizer.Add(self.text_editor, 1, wx.EXPAND | wx.ALL, 0)
+        sizer.Add(self.text_editor, 1, wx.EXPAND)
+
+        if self.level > 0:
+            self.sizer.Insert(0, (20 * self.level, 0))
+
+        self.set_background_color("#ffffff")
+        self.update_text_view()
 
         self.SetSizer(sizer)
-        self.Layout()
         sizer.Fit(self)
+        self.Layout()
+
+
+    def set_next_item(self, next_item):
+        """
+        set the next item
+        """
+        self.next_item = next_item
+
+
+    def set_previous_item(self, previous_item):
+        """
+        set the previous item
+        """
+        self.previous_item = previous_item
+
+
+    def add_child(self, child):
+        """
+        append a child item to this item
+        """
+        self.child_items.append(child)
+
+
+    def get_child_count(self):
+        """
+        returns the number of children
+        """
+        return len(self.child_items)
 
 
     def cb_on_tab_pressed(self, item, shift_pressed):
@@ -73,7 +124,15 @@ class LineItemsPanel(wx.Panel):
         Event handler that's called when the checkbox is clicked.
         """
         # if checkbox is checked, show text in strikethrough
-        print "checkbox value: %s" % self.checkbox.GetValue()
+        logging.info("checkbox value: %s", self.checkbox.GetValue())
+
+        self.update_text_view()
+
+    def update_text_view(self):
+        """
+        update the text properties based on the
+        checkbox value
+        """
 
         if self.checkbox.GetValue():
             props = {
@@ -125,11 +184,11 @@ class LineItemsPanel(wx.Panel):
                 callback(self, reason)
 
 
-    def set_focus_and_startedit(self):
+    def set_focus_and_startedit(self, insertion_point):
         """
         Sets focus on the editable text and stats editing.
         """
-        self.text_editor.start_edit()
+        self.text_editor.start_edit(insertion_point=insertion_point)
 
 
     def close(self):
@@ -139,3 +198,22 @@ class LineItemsPanel(wx.Panel):
         self.text_editor.close()
         self.DestroyChildren()
         self.Destroy()
+
+
+    def set_background_color(self, color):
+        """
+        Set the background color for this panel
+        """
+        self.checkbox_panel.SetBackgroundColour(color)
+        self.text_editor.SetBackgroundColour(color)
+        self.SetBackgroundColour(color)
+
+
+    def pass_wheel_scrolls_to(self, callback):
+        """
+        Bind mouse wheel event to the callback
+        """
+        self.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.checkbox.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.checkbox_panel.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.text_editor.pass_wheel_scrolls_to(callback)

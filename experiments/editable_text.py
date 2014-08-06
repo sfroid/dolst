@@ -7,7 +7,7 @@ Editable text panel
 
 import wx
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
-from experiments.wx_utils import shifted_and_expanded
+from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
 
 class EditableText(wx.Panel):
     """
@@ -22,6 +22,7 @@ class EditableText(wx.Panel):
         self.end_edit_callbacks = []
         self.tab_pressed_callbacks = []
         self.del_in_empty_callbacks = []
+        self.last_cursor_position = None
 
         textpos = get_editable_text_pos()
 
@@ -60,10 +61,10 @@ class EditableText(wx.Panel):
         """
         Handler for mouse click event
         """
-        self.start_edit()
+        self.start_edit(mouse_pos=event.GetPositionTuple())
 
 
-    def start_edit(self):
+    def start_edit(self, mouse_pos=None, insertion_point=None):
         """
         This method hides the uneditable static text field and replaces
         it with an editable textctrl containing the same text
@@ -86,6 +87,18 @@ class EditableText(wx.Panel):
 
         self.text_editor.Show()
         self.text_editor.SetFocus()
+
+        def set_insertion_point(editor, loc):
+            editor.SetInsertionPoint(loc)
+
+        if mouse_pos is not None:
+            caret_location = get_insertion_pos(self, self.text, mouse_pos)
+            print "loc = %s" % caret_location
+            wx.CallAfter(set_insertion_point, self.text_editor, caret_location)
+
+        if insertion_point is not None:
+            wx.CallAfter(set_insertion_point, self.text_editor, insertion_point)
+
         self.editing_text = True
 
 
@@ -211,6 +224,7 @@ class EditableText(wx.Panel):
             self.text = self.text_editor.GetValue()
             self.stext.Label = self.text
 
+        self.last_cursor_position = self.text_editor.GetInsertionPoint()
         self.text_editor.Hide()
         self.stext.Show()
         self.editing_text = False
@@ -263,6 +277,15 @@ class EditableText(wx.Panel):
         self.Destroy()
 
 
+    def pass_wheel_scrolls_to(self, callback):
+        """
+        Bind mouse wheel event to the callback
+        """
+        self.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.stext.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.text_editor.Bind(wx.EVT_MOUSEWHEEL, callback)
+
+
 class DoubleClickEditor(EditableText):
     """
     Line editor for categories
@@ -280,7 +303,7 @@ class DoubleClickEditor(EditableText):
         """
         Called on a mouse left double click
         """
-        self.start_edit()
+        self.start_edit(mouse_pos=event.GetPositionTuple())
 
 
     def cb_on_mouse_left_up(self, event=None):

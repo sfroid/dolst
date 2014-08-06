@@ -26,12 +26,9 @@ class ItemsListPanel(ScrolledPanel):
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
 
-        #sizer.Fit(self)
-
         self.SetSizer(sizer)
         self.SetAutoLayout(1)
         self.SetupScrolling()
-        #self.Layout()
 
 
     def _on_end_line_item_textedit(self, item, reason):
@@ -56,17 +53,20 @@ class ItemsListPanel(ScrolledPanel):
                           line_item_panel)
             return
 
+        insertion_point = line_item_panel.text_editor.last_cursor_position
+
         if direction == 1:
-            # UP
+            # Up
             if pos > 0:
-                self._set_focus_on_item_for_edit(pos - 1)
+                self._set_focus_on_item_for_edit(pos - 1, insertion_point)
             else:
-                self._set_focus_on_item_for_edit(len(self.line_item_panels) - 1)
+                self._set_focus_on_item_for_edit(len(self.line_item_panels) - 1, insertion_point)
         else:
+            # Down
             if pos < (len(self.line_item_panels) - 1):
-                self._set_focus_on_item_for_edit(pos + 1)
+                self._set_focus_on_item_for_edit(pos + 1, insertion_point)
             else:
-                self._set_focus_on_item_for_edit(0)
+                self._set_focus_on_item_for_edit(0, insertion_point)
 
 
     def _on_move_focus_down_on_enter(self, line_item_panel):
@@ -81,7 +81,10 @@ class ItemsListPanel(ScrolledPanel):
             return
 
         print "inserting new item in pos : %s" % pos
-        self._insert_new_item(pos, line_item_panel.parent_item, line_item_panel)
+        if line_item_panel.get_child_count() > 0:
+            self._insert_new_item(pos, line_item_panel, line_item_panel)
+        else:
+            self._insert_new_item(pos, line_item_panel.parent_item, line_item_panel)
         self._set_focus_on_item_for_edit(pos + 1)
 
 
@@ -90,18 +93,28 @@ class ItemsListPanel(ScrolledPanel):
         Create a line_item, bind callbacks, and return item
         """
         line_item = LineItemsPanel(self, parent_item, previous_item, data)
+        if previous_item is not None:
+            temp_item = previous_item.next_item
+            previous_item.set_next_item(line_item)
+            line_item.set_next_item(temp_item)
+            if temp_item is not None:
+                temp_item.set_previous_item(line_item)
+
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
-        line_item.pass_scrolls_to(self.cb_mouse_wheel_on_item)
+        line_item.pass_wheel_scrolls_to(self.cb_on_mouse_wheel_scroll)
         return line_item
 
-    def cb_mouse_wheel_on_item(self, event):
+    def cb_on_mouse_wheel_scroll(self, event):
         """
         called when mouse wheel is used on line items
         event.GetWheelRotation() returns Down : 120, Up: -120
+        #TODO: replace 3, -3 with settings values
         """
-        print "rotating wheel %s" % event.GetWheelRotation()
-
+        if event.GetWheelRotation() > 0:
+            self.ScrollLines(-3)
+        else:
+            self.ScrollLines(3)
 
 
     def _on_del_empty_line(self, item):
@@ -117,7 +130,7 @@ class ItemsListPanel(ScrolledPanel):
         wx.CallAfter(self.RemoveChild, item)
         wx.CallAfter(item.close)
 
-        self._set_focus_on_item_for_edit(pos - 1)
+        self._set_focus_on_item_for_edit(pos - 1, -1)
 
 
     def _insert_new_item(self, pos, parent_item, previous_item):
@@ -126,8 +139,11 @@ class ItemsListPanel(ScrolledPanel):
         Also sets focus at that item.
         """
 
+        level = 0
+        if parent_item is not None:
+            level = parent_item.level + 1
         line_item_panel = self.create_line(parent_item, previous_item,
-                                           ("", 23423, False, parent_item.level))
+                                           ("", 23423, False, level))
 
         if pos == len(self.line_item_panels) - 1:
             self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
@@ -141,14 +157,14 @@ class ItemsListPanel(ScrolledPanel):
         self.SetupScrolling()
 
 
-    def _set_focus_on_item_for_edit(self, pos):
+    def _set_focus_on_item_for_edit(self, pos, insertion_point=-1):
         """
         Sets focus on a particular item and starts editing text
         """
         if len(self.line_item_panels) > 0:
             pos = pos % len(self.line_item_panels)
             item = self.line_item_panels[pos]
-            item.set_focus_and_startedit()
+            item.set_focus_and_startedit(insertion_point)
 
 
     def clear_and_add_items(self, data):

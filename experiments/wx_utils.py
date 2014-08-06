@@ -33,3 +33,26 @@ def get_top_frame():
     Returns the top level frame of the app
     """
     return wx.GetApp().view_top_frame
+
+
+def get_insertion_pos(parent, text, mouse_pos):
+    """
+    Find the character position for a given mouse position
+    TODO: Improve this using binary search.
+    """
+    dummy_text = wx.TextCtrl(parent, -1, pos=(-2000, -2000))
+    width, last_width, midpt = 0, 0, 0
+    mouse_x = mouse_pos[0]
+
+    if len(text) == 0:
+        return 0
+
+    for idx2 in range(1, len(text)):
+        width, dummy = dummy_text.GetTextExtent(text[:idx2])
+        if width > mouse_x:
+            midpt = (width + last_width) / 2.0
+            if midpt > mouse_x:
+                return (idx2 - 1)
+            return idx2
+        last_width = width
+    return idx2 + 1

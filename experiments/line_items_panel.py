@@ -22,11 +22,19 @@ class LineItemsPanel(wx.Panel):
 
         self.parent_item = parent_item
         self.previous_item = previous_item
+        self.next_item = None
 
         self.text, self.idx, self.complete, self.level = data
         self.end_edit_callbacks = []
         self.child_items = []
 
+        self.do_layout()
+
+
+    def do_layout(self):
+        """
+        set the layout and background color
+        """
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         if hasattr(LineItemsPanel, "checkbox_size"):
@@ -63,11 +71,32 @@ class LineItemsPanel(wx.Panel):
         self.Layout()
 
 
+    def set_next_item(self, next_item):
+        """
+        set the next item
+        """
+        self.next_item = next_item
+
+
+    def set_previous_item(self, previous_item):
+        """
+        set the previous item
+        """
+        self.previous_item = previous_item
+
+
     def add_child(self, child):
         """
         append a child item to this item
         """
         self.child_items.append(child)
+
+
+    def get_child_count(self):
+        """
+        returns the number of children
+        """
+        return len(self.child_items)
 
 
     def cb_on_tab_pressed(self, item, shift_pressed):
@@ -155,11 +184,11 @@ class LineItemsPanel(wx.Panel):
                 callback(self, reason)
 
 
-    def set_focus_and_startedit(self):
+    def set_focus_and_startedit(self, insertion_point):
         """
         Sets focus on the editable text and stats editing.
         """
-        self.text_editor.start_edit()
+        self.text_editor.start_edit(insertion_point=insertion_point)
 
 
     def close(self):
@@ -179,7 +208,12 @@ class LineItemsPanel(wx.Panel):
         self.text_editor.SetBackgroundColour(color)
         self.SetBackgroundColour(color)
 
-    def pass_scrolls_to(self, cb):
-        self.Bind(wx.EVT_MOUSEWHEEL, cb)
-        self.text_editor.Bind(wx.EVT_MOUSEWHEEL, cb)
-        self.checkbox.Bind(wx.EVT_MOUSEWHEEL, cb)
+
+    def pass_wheel_scrolls_to(self, callback):
+        """
+        Bind mouse wheel event to the callback
+        """
+        self.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.checkbox.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.checkbox_panel.Bind(wx.EVT_MOUSEWHEEL, callback)
+        self.text_editor.pass_wheel_scrolls_to(callback)

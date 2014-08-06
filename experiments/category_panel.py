@@ -28,8 +28,8 @@ class CategoryListPanel(ScrolledPanel):
         self.sizer = sizer
         self.sizer.Add((0, self.border))
         self.SetSizer(sizer)
-        self.Layout()
-        sizer.Fit(self)
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
 
     def cb_on_left_up(self, event):
         """
@@ -55,8 +55,8 @@ class CategoryListPanel(ScrolledPanel):
 
         item.callback_on_selection(self.cb_on_selection)
 
-        self.Layout()
-        self.Refresh()
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
 
 
     def cb_on_selection(self, item):

@@ -11,7 +11,7 @@ import logging
 from experiments.line_items_panel import LineItemsPanel
 
 
-class ItemsListPanel(ScrolledPanel):
+class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
     """
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.
@@ -157,7 +157,7 @@ class ItemsListPanel(ScrolledPanel):
         self.SetupScrolling()
 
 
-    def _set_focus_on_item_for_edit(self, pos, insertion_point=-1):
+    def _set_focus_on_item_for_edit(self, pos, insertion_point=None):
         """
         Sets focus on a particular item and starts editing text
         """

@@ -28,6 +28,9 @@ class LineItemsPanel(wx.Panel):
         self.end_edit_callbacks = []
         self.child_items = []
 
+        (self.text_editor, self.checkbox,
+         self.checkbox_panel, self.sizer) = (None, )*4
+
         self.do_layout()
 
 

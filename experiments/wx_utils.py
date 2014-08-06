@@ -43,6 +43,7 @@ def get_insertion_pos(parent, text, mouse_pos):
     dummy_text = wx.TextCtrl(parent, -1, pos=(-2000, -2000))
     width, last_width, midpt = 0, 0, 0
     mouse_x = mouse_pos[0]
+    idx2 = 0
 
     if len(text) == 0:
         return 0
@@ -52,7 +53,7 @@ def get_insertion_pos(parent, text, mouse_pos):
         if width > mouse_x:
             midpt = (width + last_width) / 2.0
             if midpt > mouse_x:
-                return (idx2 - 1)
+                return idx2 - 1
             return idx2
         last_width = width
     return idx2 + 1

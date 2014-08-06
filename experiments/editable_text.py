@@ -89,7 +89,14 @@ class EditableText(wx.Panel):
         self.text_editor.SetFocus()
 
         def set_insertion_point(editor, loc):
-            editor.SetInsertionPoint(loc)
+            """
+            set the caret in the editor once it is made visible
+            Without the callafter, the whole text gets selected.
+            """
+            if loc == -1:
+                editor.SetInsertionPointEnd()
+            else:
+                editor.SetInsertionPoint(loc)
 
         if mouse_pos is not None:
             caret_location = get_insertion_pos(self, self.text, mouse_pos)

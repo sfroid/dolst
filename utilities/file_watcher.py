@@ -105,6 +105,8 @@ def main(kwargs):
     """
     command = kwargs.pop('command', COMMAND)
     only_modified = kwargs.pop('only_modified', False)
+    args = kwargs.pop('argv', [])
+    command = command + args
 
     dirty_files = set()
 
@@ -150,10 +152,14 @@ def parse_args():
     run_on_only_modified = False
     if len(sys.argv) > 1:
         if sys.argv[1] == "only_modified":
+            sys.argv = sys.argv[2:]
             logging.info("Only running tests on changes")
             run_on_only_modified = True
+        else:
+            sys.argv = sys.argv[1:]
 
-    return {"only_modified": run_on_only_modified}
+    return {"only_modified": run_on_only_modified,
+            "argv": sys.argv}
 
 
 

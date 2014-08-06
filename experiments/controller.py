@@ -20,7 +20,7 @@ class Controller(object):
         call_on_category_sel_event(self._on_category_selection)
 
 
-    def _init_view(self):
+    def _init_view(self):  # pylint: disable=no-self-use
         """
         Initialize the view
         """
@@ -30,14 +30,14 @@ class Controller(object):
         return frame
 
 
-    def _init_data_model(self):
+    def _init_data_model(self): # pylint: disable=no-self-use
         """
         Initialize the data model
         """
         print "Intializing data model"
 
 
-    def _get_category_data(self):
+    def _get_category_data(self): # pylint: disable=no-self-use
         """
         Get list of categories from the data model
         """

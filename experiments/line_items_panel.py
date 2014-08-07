@@ -95,7 +95,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
                     parent.remove_child_tree(sib)
                     self.append_child_tree(sib)
 
-                parent.remove_child_tree()
+                parent.remove_child_tree(self)
                 parent_parent.insert_after(self, parent)
         else:
             sibling = self.get_prev_item_at_same_level()

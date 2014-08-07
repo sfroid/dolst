@@ -144,12 +144,12 @@ class EditableText(wx.Panel):
             callback(self, reason)
 
 
-    def _call_del_in_empty_callbacks(self):
+    def _call_del_in_empty_callbacks(self, key):
         """
         Call the callbacks when del/backspace pressed on empty text
         """
         for callback, data in self.del_in_empty_callbacks:
-            callback(data)
+            callback(data, key)
 
 
     def _on_key_down_in_edit(self, event):
@@ -179,7 +179,7 @@ class EditableText(wx.Panel):
                 if key in (wx.WXK_DELETE, wx.WXK_BACK):
                     curr_text = self.text_editor.GetValue()
                     if curr_text == "":
-                        self._call_del_in_empty_callbacks()
+                        self._call_del_in_empty_callbacks(key)
 
                 if key == wx.WXK_ESCAPE:
                     self.escape_pressed = True

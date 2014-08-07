@@ -14,6 +14,7 @@ class MenuIDs(object):
     id_inspection_tool = 1001
     id_exit = 1002
     id_print_tree = 1003
+    id_test_tree = 1004
 
 
 def cb_open_inpection_tool(event):
@@ -39,6 +40,13 @@ def cb_dump_tree(event):
     app.view_top_frame.items_panel.print_tree()
 
 
+def cb_test_tree(event):
+    """
+    Obvious
+    """
+    app = wx.GetApp()
+    app.view_top_frame.items_panel.test_tree()
+
 
 def create_menu_bar(frame):
     """
@@ -55,12 +63,15 @@ def create_menu_bar(frame):
 
     menu2 = wx.Menu()
     menu2.Append(MenuIDs.id_inspection_tool, "&wx Inspection tool", "Open inspection tool")
-    menubar.Append(menu2, "De&v menu")
     frame.Bind(wx.EVT_MENU, cb_open_inpection_tool, id=MenuIDs.id_inspection_tool)
 
-    menu3 = wx.Menu()
-    menu3.Append(MenuIDs.id_print_tree, "&dump tree", "Dump tree details")
-    menubar.Append(menu3, "Dump Tree")
+    menu2.Append(MenuIDs.id_print_tree, "&dump tree", "Dump tree details")
     frame.Bind(wx.EVT_MENU, cb_dump_tree, id=MenuIDs.id_print_tree)
+
+    menu2.Append(MenuIDs.id_test_tree, "&test tree", "Test tree structure")
+    frame.Bind(wx.EVT_MENU, cb_test_tree, id=MenuIDs.id_test_tree)
+
+    menubar.Append(menu2, "De&v menu")
+
 
     return menubar

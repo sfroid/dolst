@@ -58,7 +58,7 @@ class DoublyLinkedLinearTree(object):
             tree1, bot1, next1 = self, self, self.children[0]
             tree2, bot2, next2 = item.get_tree_bot_next()
         else:
-            tree1, bot1, next1 = self, self.children[pos-1], self.children[pos]
+            tree1, bot1, next1 = self, self.children[pos-1].get_tree_bottom_item(), self.children[pos]
             tree2, bot2, next2 = item.get_tree_bot_next()
 
         tree1.children.insert(pos, item)
@@ -83,7 +83,8 @@ class DoublyLinkedLinearTree(object):
         next1 = child.get_tree_next_item()
 
         prev1.next_item = next1
-        next1.previous_item = prev1
+        if next1 is not None:
+            next1.previous_item = prev1
         self.children.pop(pos)
 
     def remove_tree_from_parent(self):
@@ -115,9 +116,9 @@ class DoublyLinkedLinearTree(object):
 
     def get_child_pos(self, child):
         try:
-            pos = self.children.index(self)
+            pos = self.children.index(child)
         except ValueError:
-            logging.exception("Item %s not found in parent's children", self)
+            logging.exception("Item %s not found in parent's children", child)
             raise
         return pos
 
@@ -134,12 +135,12 @@ class DoublyLinkedLinearTree(object):
 
         # parent, prev, next, children
         self.parent_item.children.remove(self)
-
         self.previous_item.next_item = bottom.next_item
+
         if bottom.next_item is not None:
             bottom.next_item.previous_item = self.previous_item
 
-        for child in self.children:
+        for child in reversed(self.children):
             self.parent_item.insert_tree(child, pos)
 
     def get_prev_item_at_same_level(self):
@@ -169,5 +170,29 @@ class DoublyLinkedLinearTree(object):
         return self.children
 
     def test_tree(self):
-        pass
+        # parent child
+        print "now testing %s%s" % ("  " * self.level, str(self))
+        tab = "    "
+
+        try:
+            assert self in self.parent_item.children
+        except:
+            print tab + "Child %s not in parent %s's children" % (self, self.parent_item)
+
+        try:
+            assert self == self.previous_item.next_item
+        except:
+            print tab + "Item %s is not next of previous %s but %s is next" % (self,
+                                                                       self.previous_item,
+                                                                       self.previous_item.next_item)
+        if self.next_item is not None:
+            try:
+                assert self.next_item.previous_item == self
+            except:
+                print tab + "Item %s is not previous of next %s but %s is previous" % (self,
+                                                                           self.next_item,
+                                                                           self.next_item.previous_item)
+
+        for child in self.children:
+            child.test_tree()
 

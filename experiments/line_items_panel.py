@@ -32,14 +32,6 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.do_layout()
 
 
-    def __str__(self):
-        return self.text
-
-
-    def __repr__(self):
-        return self.text
-
-
     def do_layout(self):
         """
         set the layout and background color
@@ -133,6 +125,8 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         else:
             self.text_editor.reset_text_properties()
 
+        self.Layout()
+
 
     def callback_on_end_textedit(self, callback, reason=None):
         """
@@ -217,3 +211,11 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         for child in self.get_children():
             child.adjust_indent_level()
         self.Layout()
+
+
+    def __str__(self):
+        return self.text
+
+
+    def __repr__(self):
+        return self.text

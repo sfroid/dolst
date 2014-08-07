@@ -100,7 +100,6 @@ class EditableText(wx.Panel):
 
         if mouse_pos is not None:
             caret_location = get_insertion_pos(self, self.text, mouse_pos)
-            print "loc = %s" % caret_location
             wx.CallAfter(set_insertion_point, self.text_editor, caret_location)
 
         if insertion_point is not None:
@@ -158,7 +157,7 @@ class EditableText(wx.Panel):
         Used for handling "Enter", "Esc" and the "Up" and "Down" keys.
         """
         key = event.GetKeyCode()
-        print "Keycode : %s" % key
+        #print "Keycode : %s" % key
 
         if key == wx.WXK_RETURN:
             if not (event.controlDown or

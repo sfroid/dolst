@@ -23,7 +23,7 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         self.line_item_panels = []
         self.head_item = DoublyLinkedLinearTree()
         self.head_item.text = "HEAD ITEM"
-        self.items_weakrefs = []
+        #self.items_weakrefs = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer = sizer
@@ -95,7 +95,7 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         Create a line_item, bind callbacks, and return item
         """
         line_item = LineItemsPanel(self, data)
-        self.items_weakrefs.append(weakref.ref(line_item))
+        #self.items_weakrefs.append(weakref.ref(line_item))
 
         if parent_item == sibling:
             sibling = None
@@ -173,6 +173,7 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
 
         self.SetAutoLayout(1)
         self.SetupScrolling()
+        wx.CallAfter(self.ScrollChildIntoView, line_item_panel)
 
 
     def _set_focus_on_item_for_edit(self, pos, insertion_point=None):
@@ -237,6 +238,7 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
 
     def test_tree(self):
         """ print out the tree """
+        print "\n\n"
         print "*" * 40
         print "tree test started"
         for child in self.head_item.children:
@@ -249,15 +251,18 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
 
         def check_neighbors(item0, item1):
             print "now testing %s%s" % ("  " * item0.level, str(item0))
-            assert item0.next_item == item1
             assert item1.previous_item == item0
+            assert item0.next_item == item1
 
         for i, item in enumerate(items[:-1]):
             check_neighbors(item, items[i+1])
+
+        print "now testing %s%s" % ("  " * items[-1].level, str(items[-1]))
+        assert items[-1].next_item == None
+
         print "ui test completed"
 
-        print "*" * 40
-        print "testing for deleted objects"
-        for item in self.items_weakrefs:
-            print item
-
+        #print "*" * 40
+        #print "testing for deleted objects"
+        #for item in self.items_weakrefs:
+            #print item

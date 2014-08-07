@@ -24,7 +24,7 @@ class DolstTopFrame(wx.Frame):
         wx.Frame.__init__(self, None, -1, title=title, size=size)
 
         splitter = SplitterPane(self, -1)
-        cat_panel, items_panel = splitter.add_panels(CategoryListPanel, ItemsListPanel, 125)
+        cat_panel, items_panel = splitter.add_panels(CategoryListPanel, ItemsListPanel, 125, 50)
 
         self.category_panel = cat_panel
         self.items_panel = items_panel

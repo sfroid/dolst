@@ -41,7 +41,7 @@ class Controller(object):
         """
         Get list of categories from the data model
         """
-        return ["Category %s" % x for x in range(1, 8)]
+        return ["C%s" % x for x in range(1, 8)]
 
 
     def _update_category_view(self, data):
@@ -65,8 +65,8 @@ class Controller(object):
         Get list of category items from the data model
         """
         from random import randint
-        return [self._dummy_get_item("%s: Item %s" % (category_name, x))
-                for x in range(randint(0, 5), randint(6, 10))]
+        return [self._dummy_get_item("%s:%s" % (category_name, x))
+                for x in range(0, 2)]
 
 
     def _update_items_view(self, data):
@@ -92,7 +92,7 @@ class Controller(object):
         pass
 
 
-    def _dummy_get_item(self, text, depth=3):
+    def _dummy_get_item(self, text, depth=2):
         """
         Recursive method which returns a tree of items
         """
@@ -100,8 +100,8 @@ class Controller(object):
         idx = randint(10000, 20000)
         completed = (0 < randint(1, 10) < 6)
         if depth > 0:
-            children = tuple([self._dummy_get_item("%s : Child %s" % (text, d), depth - 1)
-                              for d in range(randint(0, 2))])
+            children = tuple([self._dummy_get_item("%s:%s" % (text, d), depth - 1)
+                              for d in range(2)])
         else:
             children = []
         return (text, idx, completed, children)

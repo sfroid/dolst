@@ -22,13 +22,22 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         wx.Panel.__init__(self, parent)
         DoublyLinkedLinearTree.__init__(self)
 
-        self.text, self.idx, self.complete, self.level = data
+        self.text, self.idx, self.complete = data
         self.end_edit_callbacks = []
 
         (self.text_editor, self.checkbox,
-         self.checkbox_panel, self.sizer) = (None, )*4
+         self.checkbox_panel, self.sizer,
+         self.spacer) = (None, )*5
 
         self.do_layout()
+
+
+    def __str__(self):
+        return self.text
+
+
+    def __repr__(self):
+        return self.text
 
 
     def do_layout(self):
@@ -60,8 +69,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
         sizer.Add(self.text_editor, 1, wx.EXPAND)
 
-        if self.level > 0:
-            self.sizer.Insert(0, (20 * self.level, 0))
+        self.spacer = self.sizer.Insert(0, (20 * self.level, 0))
 
         self.set_background_color("#ffffff")
         self.update_text_view()
@@ -71,51 +79,33 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.Layout()
 
 
-    #def set_next_item(self, next_item):
-        #"""
-        #set the next item
-        #"""
-        #self.next_item = next_item
-
-
-    #def set_previous_item(self, previous_item):
-        #"""
-        #set the previous item
-        #"""
-        #self.previous_item = previous_item
-
-
-    #def add_child(self, child):
-        #"""
-        #append a child item to this item
-        #"""
-        #self.child_items.append(child)
-
-
-    #def get_child_count(self):
-        #"""
-        #returns the number of children
-        #"""
-        #return len(self.child_items)
-
-
     def cb_on_tab_pressed(self, item, shift_pressed):
         """
         Evt handler - called when tab is pressed while editing text
         """
-        changed = False
-
         if shift_pressed is True:
-            item0 = self.sizer.GetItem(0)
-            if item0.IsSpacer():
-                self.sizer.Remove(0)
-                changed = True
-        else:
-            self.sizer.Insert(0, (15, 0))
-            changed = True
+            parent = self.get_parent_item()
+            parent_parent = parent.get_parent_item()
+            if parent_parent is not None:
+                pos = parent_parent.get_child_pos(parent)
 
-        if changed is True:
-            self.Layout()
+                # make siblings after item, children of item
+                siblings_after = parent.get_siblings_after_item(self)
+                for sib in siblings_after:
+                    parent.remove_child_tree(sib)
+                    self.append_child_tree(sib)
+
+                parent.remove_child_tree()
+                parent_parent.insert_after(self, parent)
+        else:
+            sibling = self.get_prev_item_at_same_level()
+            # do something only if same level sibling found
+            # else, item is first child of parent, so do nothing
+            if sibling is not None:
+                self.remove_tree_from_parent()
+                sibling.append_child_tree(self)
+
+        self.adjust_indent_level()
 
 
     def cb_on_toggle_checkbox(self, event):
@@ -173,6 +163,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         key_escape
         lost_focus
         """
+        self.text = editor.text
         for callback, acc_rs in self.end_edit_callbacks:
             if isinstance(acc_rs, tuple):
                 if reason in acc_rs:
@@ -216,3 +207,13 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.checkbox.Bind(wx.EVT_MOUSEWHEEL, callback)
         self.checkbox_panel.Bind(wx.EVT_MOUSEWHEEL, callback)
         self.text_editor.pass_wheel_scrolls_to(callback)
+
+
+    def adjust_indent_level(self):
+        level = self.adjust_level()
+        self.sizer.Remove(0)
+        self.sizer.Insert(0, (20 * level, 0))
+
+        for child in self.get_children():
+            child.adjust_indent_level()
+        self.Layout()

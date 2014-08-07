@@ -77,15 +77,14 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         try:
             pos = self.line_item_panels.index(line_item_panel)
         except ValueError:
-            logging.error("Could no find position for line panel: %s",
-                          line_item_panel)
+            logging.exception("Could no find position for line panel: %s", line_item_panel)
             return
 
         print "inserting new item in pos : %s" % pos
         if line_item_panel.get_child_count() > 0:
             self._insert_new_item(pos, line_item_panel, line_item_panel)
         else:
-            self._insert_new_item(pos, line_item_panel.get_parent(), line_item_panel)
+            self._insert_new_item(pos, line_item_panel.get_parent_item(), line_item_panel)
         self._set_focus_on_item_for_edit(pos + 1)
 
 
@@ -125,6 +124,8 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         Remove the item when del/backspace is pressed in an empty line
         """
         # remove item from sizer and destroy it
+        item.delete_item_from_tree()
+
         pos = self.line_item_panels.index(item)
         self.line_item_panels.pop(pos)
         self.sizer.Remove(pos)
@@ -142,12 +143,8 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         Also sets focus at that item.
         """
 
-        level = 0
-        if parent_item is not None:
-            level = parent_item.level + 1
-
         line_item_panel = self.create_line(parent_item, previous_item,
-                                           ("", 23423, False, level))
+                                           ("", 23423, False))
 
         if pos == len(self.line_item_panels) - 1:
             self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
@@ -180,23 +177,22 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
 
         parent = self.head_item
         sibling = self.head_item
-        level = 0
-        self.add_items(data, parent, sibling, level)
+        self.add_items(data, parent, sibling)
 
         self.SetAutoLayout(1)
         self.SetupScrolling()
 
 
-    def add_items(self, data, parent, sibling, level):
+    def add_items(self, data, parent, sibling):
         """
         Recursive method to add a bunch of items in data provided as
         a tuple of tuples.
         """
         for dt in data:
             text, idx, comp, children = dt
-            sibling = item = self.create_and_add_item(parent, sibling, (text, idx, comp, level))
+            sibling = item = self.create_and_add_item(parent, sibling, (text, idx, comp))
             if len(children) > 0:
-                self.add_items(children, item, sibling, level + 1)
+                self.add_items(children, item, sibling)
 
 
     def create_and_add_item(self, parent, sibling, data):
@@ -206,8 +202,6 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         line_item = self.create_line(parent, sibling, data)
         self.sizer.Add(line_item, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
         self.line_item_panels.append(line_item)
-        #if parent is not None:
-            #parent.add_child(line_item)
         return line_item
 
 
@@ -217,3 +211,9 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         """
         self.line_item_panels = []
         self.sizer.Clear(True)
+        self.head_item = DoublyLinkedLinearTree()
+
+
+    def print_tree(self):
+        """ print out the tree """
+        self.head_item.print_tree()

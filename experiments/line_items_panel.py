@@ -8,8 +8,9 @@ The Line panel which holds the editable text and other widgets.
 import wx
 import logging
 from experiments.editable_text import EditableText
+from experiments.linked_tree import DoublyLinkedLinearTree
 
-class LineItemsPanel(wx.Panel):
+class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
     """
     A wx.Panel which holds a line of elements like
     dropdown arrow, checkbox, editable text, gear icon, etc.
@@ -17,16 +18,12 @@ class LineItemsPanel(wx.Panel):
     This can also be dragged, but drag drop is handled by the
     parent widget (another wx panel probably).
     """
-    def __init__(self, parent, parent_item, previous_item, data):
+    def __init__(self, parent, data):
         wx.Panel.__init__(self, parent)
-
-        self.parent_item = parent_item
-        self.previous_item = previous_item
-        self.next_item = None
+        DoublyLinkedLinearTree.__init__(self)
 
         self.text, self.idx, self.complete, self.level = data
         self.end_edit_callbacks = []
-        self.child_items = []
 
         (self.text_editor, self.checkbox,
          self.checkbox_panel, self.sizer) = (None, )*4
@@ -74,39 +71,38 @@ class LineItemsPanel(wx.Panel):
         self.Layout()
 
 
-    def set_next_item(self, next_item):
-        """
-        set the next item
-        """
-        self.next_item = next_item
+    #def set_next_item(self, next_item):
+        #"""
+        #set the next item
+        #"""
+        #self.next_item = next_item
 
 
-    def set_previous_item(self, previous_item):
-        """
-        set the previous item
-        """
-        self.previous_item = previous_item
+    #def set_previous_item(self, previous_item):
+        #"""
+        #set the previous item
+        #"""
+        #self.previous_item = previous_item
 
 
-    def add_child(self, child):
-        """
-        append a child item to this item
-        """
-        self.child_items.append(child)
+    #def add_child(self, child):
+        #"""
+        #append a child item to this item
+        #"""
+        #self.child_items.append(child)
 
 
-    def get_child_count(self):
-        """
-        returns the number of children
-        """
-        return len(self.child_items)
+    #def get_child_count(self):
+        #"""
+        #returns the number of children
+        #"""
+        #return len(self.child_items)
 
 
     def cb_on_tab_pressed(self, item, shift_pressed):
         """
         Evt handler - called when tab is pressed while editing text
         """
-        # add a spacer when spacer added
         changed = False
 
         if shift_pressed is True:

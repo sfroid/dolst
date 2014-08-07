@@ -8,7 +8,7 @@ Items List Panel
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 import logging
-from experiments.line_items_panel import LineItemsPanel
+from experiments.line_items_panel import LineItemsPanel, DoublyLinkedLinearTree
 
 
 class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
@@ -21,6 +21,7 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         self.border = 1
         self.padding = 5
         self.line_item_panels = []
+        self.head_item = DoublyLinkedLinearTree()
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer = sizer
@@ -84,21 +85,23 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         if line_item_panel.get_child_count() > 0:
             self._insert_new_item(pos, line_item_panel, line_item_panel)
         else:
-            self._insert_new_item(pos, line_item_panel.parent_item, line_item_panel)
+            self._insert_new_item(pos, line_item_panel.get_parent(), line_item_panel)
         self._set_focus_on_item_for_edit(pos + 1)
 
 
-    def create_line(self, parent_item, previous_item, data):
+    def create_line(self, parent_item, sibling, data):
         """
         Create a line_item, bind callbacks, and return item
         """
-        line_item = LineItemsPanel(self, parent_item, previous_item, data)
-        if previous_item is not None:
-            temp_item = previous_item.next_item
-            previous_item.set_next_item(line_item)
-            line_item.set_next_item(temp_item)
-            if temp_item is not None:
-                temp_item.set_previous_item(line_item)
+        line_item = LineItemsPanel(self, data)
+
+        if parent_item == sibling:
+            sibling = None
+
+        if sibling is None:
+            parent_item.insert_tree(line_item, 0)
+        else:
+            parent_item.insert_after(line_item, sibling)
 
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
@@ -142,6 +145,7 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         level = 0
         if parent_item is not None:
             level = parent_item.level + 1
+
         line_item_panel = self.create_line(parent_item, previous_item,
                                            ("", 23423, False, level))
 
@@ -174,37 +178,36 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         """
         self.clear_all()
 
-        parent = None
-        previous = None
+        parent = self.head_item
+        sibling = self.head_item
         level = 0
-        self.add_items(data, parent, previous, level)
+        self.add_items(data, parent, sibling, level)
 
         self.SetAutoLayout(1)
         self.SetupScrolling()
 
 
-    def add_items(self, data, parent, previous, level):
+    def add_items(self, data, parent, sibling, level):
         """
         Recursive method to add a bunch of items in data provided as
         a tuple of tuples.
         """
         for dt in data:
             text, idx, comp, children = dt
-            previous = item = self.create_and_add_item(parent, previous, (text, idx, comp, level))
+            sibling = item = self.create_and_add_item(parent, sibling, (text, idx, comp, level))
             if len(children) > 0:
-                previous = self.add_items(children, item, previous, level + 1)
-        return previous
+                self.add_items(children, item, sibling, level + 1)
 
 
-    def create_and_add_item(self, parent, previous, data):
+    def create_and_add_item(self, parent, sibling, data):
         """
         Handles a single item
         """
-        line_item = self.create_line(parent, previous, data)
+        line_item = self.create_line(parent, sibling, data)
         self.sizer.Add(line_item, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
         self.line_item_panels.append(line_item)
-        if parent is not None:
-            parent.add_child(line_item)
+        #if parent is not None:
+            #parent.add_child(line_item)
         return line_item
 
 

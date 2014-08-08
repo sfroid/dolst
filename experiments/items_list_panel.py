@@ -30,14 +30,44 @@ class DragDropMixin(object):
 
     def setup_dragging(self):
         self.Bind(wx.EVT_LEFT_DOWN, self.cb_on_left_down)
+        self.Bind(wx.EVT_MOTION, self.cb_on_mouse_move)
+        self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
 
     def cb_on_left_down(self, event):
         print "in left down"
         self.left_down = True
-        self.left_down_position = event.GetPosition()
+        self.left_down_position = event.GetPositionTuple()
 
     def cb_on_mouse_move(self, event):
-        pass
+        if self.left_down is True:
+            pos = event.GetPosition()
+            if self.square_distance(pos, self.left_down_position) > 100:
+                self.start_dragging()
+
+    def start_dragging(self):
+        print "start dragging"
+        self.dragging = True
+
+        # move out the item tree from the tree
+        # and move out the UI elements
+        # do layout
+        # wait for drag
+        # insert it into the tree at the dropped place
+
+
+    def cb_on_left_up(self, event):
+        self.left_down = False
+        if self.dragging is True:
+            self.dragging = False
+            print "end dragging"
+        else:
+            event.Skip()
+
+    def square_distance(self, p, q):
+        a1, a2 = p
+        b1, b2 = q
+        return ( (a1 - b1)**2 + (a2 - b2)**2 )
+
 
 
 
@@ -159,19 +189,11 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
         line_item.pass_wheel_scrolls_to(self.cb_on_mouse_wheel_scroll)
         line_item.set_cb_on_arrow_clicked(self.cb_on_arrow_clicked)
+        line_item.setup_dragging(self)
         return line_item
 
 
     def cb_on_arrow_clicked(self, item, expanded):
-        #if expanded is True:
-            #item.set_ex
-        #tree_chldren = item.get_all_children()
-        #for child in tree_chldren:
-            #if expanded is False:
-                #child.Hide()
-            #else:
-                #child.Show()
-
         self.SetAutoLayout(1)
         self.SetupScrolling()
 

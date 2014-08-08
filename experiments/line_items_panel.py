@@ -72,6 +72,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         wx.Panel.__init__(self, parent)
         DoublyLinkedLinearTree.__init__(self)
         self.expanded = True
+        self.selected = False
 
         self.text, self.idx, self.complete = data
         self.end_edit_callbacks = []
@@ -82,6 +83,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
          self.spacer) = (None, )*5
 
         self.do_layout()
+        self.setup_highlighting()
 
 
     def do_layout(self):
@@ -313,6 +315,33 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         for child in self.get_children():
             child.adjust_indent_level()
         self.Layout()
+
+
+    def setup_dragging(self, dragh):
+        self.Bind(wx.EVT_LEFT_DOWN, dragh.cb_on_left_down)
+        self.Bind(wx.EVT_MOTION, dragh.cb_on_mouse_move)
+        self.Bind(wx.EVT_LEFT_UP, dragh.cb_on_left_up)
+
+        self.text_editor.setup_dragging(dragh)
+
+
+    def setup_highlighting(self):
+        self.Bind(wx.EVT_ENTER_WINDOW, self.cb_mouse_on_item)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.cb_mouse_left_item)
+
+    def cb_mouse_on_item(self, event):
+        self.SetBackgroundColour("#ffddaa")
+        self.checkbox_panel.SetBackgroundColour("#ffddaa")
+        self.text_editor.SetBackgroundColour("#ffddaa")
+        self.arrow.SetBackgroundColour("#ffddaa")
+        self.Refresh()
+
+    def cb_mouse_left_item(self, event):
+        self.SetBackgroundColour("#ffffff")
+        self.checkbox_panel.SetBackgroundColour("#ffffff")
+        self.text_editor.SetBackgroundColour("#ffffff")
+        self.arrow.SetBackgroundColour("#ffffff")
+        self.Refresh()
 
 
     def __str__(self):

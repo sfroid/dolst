@@ -291,6 +291,15 @@ class EditableText(wx.Panel):
         self.stext.Bind(wx.EVT_MOUSEWHEEL, callback)
         self.text_editor.Bind(wx.EVT_MOUSEWHEEL, callback)
 
+    def setup_dragging(self, dragh):
+        self.stext.Bind(wx.EVT_LEFT_DOWN, dragh.cb_on_left_down)
+        self.stext.Bind(wx.EVT_MOTION, dragh.cb_on_mouse_move)
+        self.stext.Bind(wx.EVT_LEFT_UP, dragh.cb_on_left_up)
+
+        self.Bind(wx.EVT_LEFT_DOWN, dragh.cb_on_left_down)
+        self.Bind(wx.EVT_MOTION, dragh.cb_on_mouse_move)
+        self.Bind(wx.EVT_LEFT_UP, dragh.cb_on_left_up)
+
 
 class DoubleClickEditor(EditableText):
     """

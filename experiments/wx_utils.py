@@ -3,6 +3,7 @@ Wx related UI utility functions go here
 """
 
 import wx
+import os
 
 def expanded(widget, flags=None, padding=0):
     """
@@ -57,3 +58,14 @@ def get_insertion_pos(parent, text, mouse_pos):
             return idx2
         last_width = width
     return idx2 + 1
+
+
+def get_image_path(num):
+    # TODO - change paths when refactoring
+    fnames = { 1: "arrow_right.png",
+               2: "arrow_down.png",
+               3: "arrow_down.png",}
+
+    name = fnames.get(num, "arrow_down.png")
+
+    return os.path.join(os.path.dirname(__file__), name)

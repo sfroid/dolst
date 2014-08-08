@@ -169,6 +169,12 @@ class DoublyLinkedLinearTree(object):
     def get_children(self):
         return self.children
 
+    def get_all_children(self):
+        all_children = self.children[:]
+        for child in self.children:
+            all_children.extend(child.get_all_children())
+        return all_children
+
     def test_tree(self):
         # parent child
         print "now testing %s%s" % ("  " * self.level, str(self))

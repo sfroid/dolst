@@ -8,16 +8,47 @@ Items List Panel
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 import logging
-from experiments.line_items_panel import LineItemsPanel, DoublyLinkedLinearTree
 import weakref
+from experiments.line_items_panel import LineItemsPanel, DoublyLinkedLinearTree
 
-class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
+
+class DragDropMixin(object):
+    def __init__(self):
+        self.dragging = False
+        self.left_down = False
+        self.left_down_position = None
+        pass
+
+    def on_drag_start(self):
+        print "starting drag"
+        self.dragging = True
+
+
+    def on_drag_end(self):
+        print "ending drag"
+        self.dragging = False
+
+    def setup_dragging(self):
+        self.Bind(wx.EVT_LEFT_DOWN, self.cb_on_left_down)
+
+    def cb_on_left_down(self, event):
+        print "in left down"
+        self.left_down = True
+        self.left_down_position = event.GetPosition()
+
+    def cb_on_mouse_move(self, event):
+        pass
+
+
+
+class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-ancestors
     """
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.
     """
     def __init__(self, parent):
         ScrolledPanel.__init__(self, parent, -1)
+        DragDropMixin.__init__(self)
         self.border = 1
         self.padding = 5
         self.line_item_panels = []
@@ -28,6 +59,8 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
+
+        self.setup_dragging()
 
         self.SetSizer(sizer)
         self.SetAutoLayout(1)
@@ -108,7 +141,22 @@ class ItemsListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         line_item.callback_on_end_textedit(self._on_end_line_item_textedit)
         line_item.callback_on_del_in_empty(self._on_del_empty_line)
         line_item.pass_wheel_scrolls_to(self.cb_on_mouse_wheel_scroll)
+        line_item.set_cb_on_arrow_clicked(self.cb_on_arrow_clicked)
         return line_item
+
+
+    def cb_on_arrow_clicked(self, item, expanded):
+        #if expanded is True:
+            #item.set_ex
+        #tree_chldren = item.get_all_children()
+        #for child in tree_chldren:
+            #if expanded is False:
+                #child.Hide()
+            #else:
+                #child.Show()
+
+        self.SetAutoLayout(1)
+        self.SetupScrolling()
 
     def cb_on_mouse_wheel_scroll(self, event):
         """

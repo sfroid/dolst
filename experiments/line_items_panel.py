@@ -9,6 +9,56 @@ import wx
 import logging
 from experiments.editable_text import EditableText
 from experiments.linked_tree import DoublyLinkedLinearTree
+from experiments.wx_utils import get_image_path
+
+
+class DropDownArrow(wx.Panel):
+    image1 = None
+    image2 = None
+    image3 = None
+
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        self.expand_callback = None
+        self.expanded = True
+
+        self.load_images()
+
+        self.arrow_right = wx.StaticBitmap(self, -1, self.image1, pos=(0, 0))
+        self.arrow_down = wx.StaticBitmap(self, -1, self.image2, pos=(0, 0))
+        self.arrow_right.Hide()
+
+        self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+        self.arrow_down.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+        self.arrow_right.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+
+    def load_images(self):
+        if DropDownArrow.image1 == None:
+            for i in [1, 2, 3]:
+                attr = "image%s" % (i)
+                image = wx.Image(get_image_path(i), wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+                #image.SetSize((40, 40))
+                setattr(DropDownArrow, attr, image)
+
+    def cb_on_left_up(self, event):
+        if self.expanded is True:
+            self.expanded = False
+            self.arrow_down.Hide()
+            self.arrow_right.Show()
+        else:
+            self.expanded = True
+            self.arrow_down.Show()
+            self.arrow_right.Hide()
+
+        if self.expand_callback is not None:
+            self.expand_callback(self.expanded)
+
+        self.Refresh()
+
+    def set_callback_on_click(self, cb):
+        self.expand_callback = cb
+
+
 
 class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
     """
@@ -21,9 +71,11 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
     def __init__(self, parent, data):
         wx.Panel.__init__(self, parent)
         DoublyLinkedLinearTree.__init__(self)
+        self.expanded = True
 
         self.text, self.idx, self.complete = data
         self.end_edit_callbacks = []
+        self.callback_on_arrow_click = None
 
         (self.text_editor, self.checkbox,
          self.checkbox_panel, self.sizer,
@@ -37,6 +89,10 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         set the layout and background color
         """
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.arrow = DropDownArrow(self)
+        self.arrow.set_callback_on_click(self.cb_on_arrow_clicked)
+        self.sizer.Add(self.arrow, 0)
 
         if hasattr(LineItemsPanel, "checkbox_size"):
             size = LineItemsPanel.checkbox_size
@@ -108,6 +164,36 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         logging.info("checkbox value: %s", self.checkbox.GetValue())
 
         self.update_text_view()
+
+
+    def set_cb_on_arrow_clicked(self, cb):
+        self.callback_on_arrow_click = cb
+
+
+    def cb_on_arrow_clicked(self, expanded):
+        self.expanded = expanded
+        if self.expanded is True:
+            self.do_expansion()
+        else:
+            self.do_contraction()
+
+        if self.callback_on_arrow_click is not None:
+            self.callback_on_arrow_click(self, expanded)
+
+
+    def do_expansion(self):
+        self.Show()
+        if self.expanded:
+            for child in self.children:
+                child.do_expansion()
+
+
+    def do_contraction(self):
+        #self.Hide()
+        for child in self.children:
+            child.Hide()
+            child.do_contraction()
+
 
     def update_text_view(self):
         """

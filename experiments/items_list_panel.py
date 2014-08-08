@@ -28,23 +28,26 @@ class DragDropMixin(object):
         print "ending drag"
         self.dragging = False
 
-    def setup_dragging(self):
-        self.Bind(wx.EVT_LEFT_DOWN, self.cb_on_left_down)
-        self.Bind(wx.EVT_MOTION, self.cb_on_mouse_move)
-        self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+    #def setup_dragging(self):
+        #self.Bind(wx.EVT_LEFT_DOWN, self.cb_on_left_down)
+        #self.Bind(wx.EVT_MOTION, self.cb_on_mouse_move)
+        #self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
 
-    def cb_on_left_down(self, event):
+    def cb_on_left_down(self, event, item):
         print "in left down"
         self.left_down = True
         self.left_down_position = event.GetPositionTuple()
+        event.Skip()
 
-    def cb_on_mouse_move(self, event):
+    def cb_on_mouse_move(self, event, item):
         if self.left_down is True:
             pos = event.GetPosition()
             if self.square_distance(pos, self.left_down_position) > 100:
-                self.start_dragging()
+                self.start_dragging(item)
+        else:
+            event.Skip()
 
-    def start_dragging(self):
+    def start_dragging(self, item):
         print "start dragging"
         self.dragging = True
 
@@ -55,7 +58,7 @@ class DragDropMixin(object):
         # insert it into the tree at the dropped place
 
 
-    def cb_on_left_up(self, event):
+    def cb_on_left_up(self, event, item):
         self.left_down = False
         if self.dragging is True:
             self.dragging = False
@@ -90,7 +93,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
 
-        self.setup_dragging()
+        #self.setup_dragging()
 
         self.SetSizer(sizer)
         self.SetAutoLayout(1)

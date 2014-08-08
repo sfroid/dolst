@@ -317,12 +317,20 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.Layout()
 
 
-    def setup_dragging(self, dragh):
-        self.Bind(wx.EVT_LEFT_DOWN, dragh.cb_on_left_down)
-        self.Bind(wx.EVT_MOTION, dragh.cb_on_mouse_move)
-        self.Bind(wx.EVT_LEFT_UP, dragh.cb_on_left_up)
+    def setup_dragging(self, drag_handler):
+        def on_left_down(event):
+            drag_handler.cb_on_left_down(event, self)
+        def on_mouse_move(event):
+            drag_handler.cb_on_mouse_move(event, self)
+        def on_left_up(event):
+            drag_handler.cb_on_left_up(event, self)
 
-        self.text_editor.setup_dragging(dragh)
+        self.Bind(wx.EVT_LEFT_DOWN, on_left_down)
+        self.Bind(wx.EVT_MOTION, on_mouse_move)
+        self.Bind(wx.EVT_LEFT_UP, on_left_up)
+
+        cb_methods = (on_left_down, on_mouse_move, on_left_up)
+        self.text_editor.setup_dragging(cb_methods)
 
 
     def setup_highlighting(self):

@@ -82,45 +82,62 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         """
         Move focus to next items (either up or down)
         """
-        try:
-            pos = self.line_item_panels.index(line_item_panel)
-        except ValueError:
-            logging.error("Could no find position for line panel: %s",
-                          line_item_panel)
-            return
-
+        pos = self.get_line_item_index(line_item_panel)
         insertion_point = line_item_panel.text_editor.last_cursor_position
 
-        if direction == 1:
-            # Up
+        if direction == 1: # Up
             if pos > 0:
-                self._set_focus_on_item_for_edit(pos - 1, insertion_point)
+                loc = self.find_expanded_item(pos - 1 , 1)
             else:
-                self._set_focus_on_item_for_edit(len(self.line_item_panels) - 1, insertion_point)
-        else:
-            # Down
+                loc = self.find_expanded_item(len(self.line_item_panels) - 1, 1)
+        else: # Down
             if pos < (len(self.line_item_panels) - 1):
-                self._set_focus_on_item_for_edit(pos + 1, insertion_point)
+                loc = self.find_expanded_item(pos + 1, 0)
             else:
-                self._set_focus_on_item_for_edit(0, insertion_point)
+                loc = 0
+
+        self._set_focus_on_item_for_edit(loc, insertion_point)
+
+
+    def find_expanded_item(self, pos, direction):
+        if direction == 1:
+            for i, item in enumerate(reversed(self.line_item_panels[:pos+1])):
+                if item.IsShown() is True:
+                    return pos - i
+        else:
+            for i, item in enumerate(self.line_item_panels[pos:]):
+                if item.IsShown() is True:
+                    return pos + i
+            return 0
+        raise
 
 
     def _on_move_focus_down_on_enter(self, line_item_panel):
         """
         when enter pressed while editing, add new item
         """
-        try:
-            pos = self.line_item_panels.index(line_item_panel)
-        except ValueError:
-            logging.exception("Could no find position for line panel: %s", line_item_panel)
-            return
+        pos = self.get_line_item_index(line_item_panel)
+        print "inserting new item after pos : %s" % pos
 
-        print "inserting new item in pos : %s" % pos
-        if line_item_panel.get_child_count() > 0:
-            self._insert_new_item(pos, line_item_panel, line_item_panel)
+        if line_item_panel.expanded is True:
+            if line_item_panel.get_child_count() > 0:
+                self._insert_new_item(pos, line_item_panel, line_item_panel)
+            else:
+                self._insert_new_item(pos, line_item_panel.get_parent_item(), line_item_panel)
         else:
+            line_item_tree_bottom = line_item_panel.get_tree_bottom_item()
+            pos = self.get_line_item_index(line_item_tree_bottom)
             self._insert_new_item(pos, line_item_panel.get_parent_item(), line_item_panel)
+
         self._set_focus_on_item_for_edit(pos + 1)
+
+
+    def get_line_item_index(self, item):
+        try:
+            return self.line_item_panels.index(item)
+        except ValueError:
+            logging.exception("Could no find position for line panel: %s", item)
+            raise
 
 
     def create_line(self, parent_item, sibling, data):

@@ -163,7 +163,23 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         # if checkbox is checked, show text in strikethrough
         logging.info("checkbox value: %s", self.checkbox.GetValue())
 
+        value = self.checkbox.GetValue()
+        self.set_child_checkboxes(value)
+        self.set_parent_checkbox(value)
+
+
+    def set_child_checkboxes(self, value):
+        self.checkbox.SetValue(value)
+        for child in self.children:
+            child.set_child_checkboxes(value)
         self.update_text_view()
+
+
+    def set_parent_checkbox(self, value):
+        if value is False:
+            parent = self.get_parent_item()
+            if hasattr(parent, "checkbox"):
+                parent.checkbox.SetValue(value)
 
 
     def set_cb_on_arrow_clicked(self, cb):

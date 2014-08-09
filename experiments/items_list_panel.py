@@ -17,6 +17,8 @@ class DragDropMixin(object):
         self.dragging = False
         self.left_down = False
         self.left_down_position = None
+        self.dragged_data = {}
+        self.coord_shift = None
         pass
 
     def on_drag_start(self):
@@ -28,40 +30,61 @@ class DragDropMixin(object):
         print "ending drag"
         self.dragging = False
 
-    #def setup_dragging(self):
-        #self.Bind(wx.EVT_LEFT_DOWN, self.cb_on_left_down)
-        #self.Bind(wx.EVT_MOTION, self.cb_on_mouse_move)
-        #self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
-
     def cb_on_left_down(self, event, item):
-        print "in left down"
+        print "left down on item %s" % str(item)
         self.left_down = True
+        ipos = self.ScreenToClient(item.GetPositionTuple())
+        mpos = self.ScreenToClient(wx.GetMousePosition())
+
+        self.dx, self.dy = (ipos[0] - mpos[0], ipos[1] - mpos[1])
+
         self.left_down_position = event.GetPositionTuple()
         event.Skip()
 
     def cb_on_mouse_move(self, event, item):
-        if self.left_down is True:
+        if (self.dragging is False) and (self.left_down is True):
             pos = event.GetPosition()
             if self.square_distance(pos, self.left_down_position) > 100:
-                self.start_dragging(item)
+                self.start_dragging(event, item)
+        elif self.dragging is True:
+            self.continue_dragging(event)
         else:
             event.Skip()
 
-    def start_dragging(self, item):
-        print "start dragging"
+    def start_dragging(self, event, item):
+        print "starting to drag %s" % item
         self.dragging = True
+        self.dragged_data['tree_item'] = item
 
         # move out the item tree from the tree
+        isinstance(item, LineItemsPanel)
+
+        item.remove_tree_from_parent()
+
         # and move out the UI elements
-        # do layout
-        # wait for drag
-        # insert it into the tree at the dropped place
+        all_items = [item] + item.get_all_children()
+        self.detach_items_from_UI(all_items[1:])
+        self.dragged_data['ui_items'] = all_items
+        item.Raise()
+        self.continue_dragging(event)
+
+        self.Layout()
+
+    def continue_dragging(self, event):
+        item = self.dragged_data.get('tree_item', None)
+        if item is not None:
+            print "continuing to drag item"
+            x, y = wx.GetMousePosition()
+            item.SetPosition(wx.Point(x + self.dx, y + self.dy))
+            item.Refresh()
 
 
     def cb_on_left_up(self, event, item):
         self.left_down = False
         if self.dragging is True:
             self.dragging = False
+            self.dragged_data = {}
+
             print "end dragging"
         else:
             event.Skip()
@@ -70,8 +93,6 @@ class DragDropMixin(object):
         a1, a2 = p
         b1, b2 = q
         return ( (a1 - b1)**2 + (a2 - b2)**2 )
-
-
 
 
 class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-ancestors
@@ -320,6 +341,14 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         self.line_item_panels = []
         self.sizer.Clear(True)
         self.head_item = DoublyLinkedLinearTree()
+
+
+    def detach_items_from_UI(self, items):
+        for item in items:
+            #item.Hide()
+            pos = self.line_item_panels.index(item)
+            self.line_item_panels.pop(pos)
+            self.sizer.Detach(item)
 
 
     def print_tree(self):

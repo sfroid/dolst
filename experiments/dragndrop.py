@@ -19,6 +19,7 @@ class DragDropMixin(object):
         self.insertions_points = None
         self.old_insertion_point = None
         self.instance = None
+        self.half_height = None
 
 
     def set_instance(self, instance):
@@ -39,6 +40,9 @@ class DragDropMixin(object):
         self.dx, self.dy = (ipos[0] - mpos[0], ipos[1] - mpos[1])
 
         self.left_down_position = event.GetPositionTuple()
+
+        logging.debug("clicked item pos : %s", item.GetPosition()[1])
+        self.old_insertion_point = -1
         event.Skip()
 
 
@@ -62,6 +66,7 @@ class DragDropMixin(object):
         self.left_down = False
         if self.dragging is True:
             logging.debug("end dragging")
+            self.continue_dragging(event)
             self.finish_dragging(item)
 
             self.dragging = False
@@ -94,9 +99,7 @@ class DragDropMixin(object):
 
         # create list of y positions of all remaining list_items
         self.insertions_points = self.instance.get_insertion_point_list()
-        posy = item.GetPosition()[1]
-        self.old_insertion_point = self.get_insertion_point(self.insertions_points, posy)
-
+        self.half_height = (self.insertions_points[1][2] - self.insertions_points[0][2])/2.0
         self.continue_dragging(event)
 
 
@@ -106,11 +109,11 @@ class DragDropMixin(object):
         if item is not None:
             y = wx.GetMousePosition()[1]
 
-            posy = (y + self.dy)
+            posy = (y + self.dy) + self.half_height
             new_insertion_point = self.get_insertion_point(self.insertions_points, posy)
-            logging.debug("new insertion point : %s at %s", new_insertion_point, posy)
 
             if new_insertion_point != self.old_insertion_point:
+                logging.debug("new insertion point : %s at %s", new_insertion_point, posy)
                 self.adjust_item_location(item, new_insertion_point, self.old_insertion_point)
                 self.old_insertion_point = new_insertion_point
                 self.instance.Layout()
@@ -134,42 +137,64 @@ class DragDropMixin(object):
     def finish_dragging(self, item):
         """ done with dragging. Put things in their correct places """
         y = wx.GetMousePosition()[1]
-        posy = (y + self.dy)
+        posy = (y + self.dy) + self.half_height
 
         insertion_point = self.get_insertion_point(self.insertions_points, posy)
+        ins_loc = self.get_sizer_insertion_index(insertion_point)
         if insertion_point == 0:
             # insert at top
             self.instance.head_item.insert_tree(item, 0)
         else:
             # insert in middle or end
-            prev_item = self.instance.line_item_panels[insertion_point - 1]
-            if insertion_point < len(self.instance.line_item_panels) - 1:
-                next_item = self.instance.line_item_panels[insertion_point + 1]
+            prev_visible_item = self.get_kth_visible_item(insertion_point - 1)
+
+            if ins_loc < len(self.instance.line_item_panels) - 1:
+                next_item = self.instance.line_item_panels[ins_loc + 1]
             else:
                 next_item = None
 
-            if (prev_item.expanded is True) and (prev_item.has_child(next_item)):
-                prev_item.insert_tree(item, 0)
+            if (prev_visible_item.expanded is True) and (prev_visible_item.has_child(next_item)):
+                prev_visible_item.insert_tree(item, 0)
             else:
-                prev_item.get_parent_item().insert_after(item, prev_item)
+                prev_visible_item.get_parent_item().insert_after(item, prev_visible_item)
 
-        self.insert_items_again(insertion_point + 1)
+        self.insert_items_again(ins_loc + 1)
 
-        # (width bug) reinsert item to make sure it takes full width
+        # (statictext width bug) reinsert item to make sure it takes full width
         self.instance.sizer.Detach(item)
-        self.instance.sizer.Insert(insertion_point, item, 0,
+        self.instance.sizer.Insert(ins_loc, item, 0,
                                    wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
         self.instance.SetAutoLayout(1)
         self.instance.SetupScrolling()
 
 
     def get_insertion_point(self, ipoints, pos):  # pylint: disable=no-self-use
-        """ get the sizer location of possible drop point """
-        for i, dummy_item, ipt in ipoints:
+        """ get the view location of current drop point """
+        for j, (i, dummy_item, ipt) in enumerate(ipoints):
             if pos < ipt:
-                logging.debug("insertion point is %s", i - 1)
-                return (i - 1) if i > 0 else 0
-        return len(ipoints) - 1
+                return j-1
+        return j
+
+
+    def get_kth_visible_item(self, idxk):
+        """ return the kth visible item (0 based) """
+        shown_count = 0
+        for item in self.instance.sizer.Children:
+            if item.IsShown():
+                if shown_count == idxk:
+                    return item.GetWindow()
+                shown_count += 1
+
+
+    def get_sizer_insertion_index(self, idxk):
+        """ return the index for the kth visible item """
+        shown_count = 0
+        for i, item in enumerate(self.instance.sizer.Children):
+            if item.IsShown():
+                if shown_count == idxk:
+                    return i
+                shown_count += 1
+        return len(self.instance.sizer.Children)
 
 
     def adjust_item_location(self, item, nip, oip):
@@ -178,8 +203,9 @@ class DragDropMixin(object):
             return
         self.instance.line_item_panels.remove(item)
         self.instance.sizer.Detach(item)
-        self.instance.line_item_panels.insert(nip, item)
-        self.instance.sizer.Insert(nip, item)
+        loc = self.get_sizer_insertion_index(nip)
+        self.instance.line_item_panels.insert(loc, item)
+        self.instance.sizer.Insert(loc, item)
 
 
     def square_distance(self, x, y):  # pylint: disable=no-self-use

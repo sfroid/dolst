@@ -77,16 +77,14 @@ class DoublyLinkedLinearTree(object):
             pos = self.children.index(sibling)
         except ValueError:
             logging.exception("sibling not found in children")
+            raise
 
         self.insert_tree(item, pos + 1)
 
 
     def remove_child_tree(self, child):
         """ remove an item tree - only removes it - does not destroy objects """
-        try:
-            pos = self.children.index(child)
-        except ValueError:
-            logging.exception("item %s not found in children", child)
+        pos = self.get_child_pos(child)
 
         prev1 = child.previous_item
         next1 = child.get_tree_next_item()
@@ -208,11 +206,9 @@ class DoublyLinkedLinearTree(object):
 
     def has_child(self, item):
         """ test if item is a child """
-        try:
-            dummy = self.children.index(item)
+        if item in self.children:
             return True
-        except ValueError:
-            return False
+        return False
 
 
     def get_all_children(self):

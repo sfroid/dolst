@@ -293,6 +293,9 @@ class EditableText(wx.Panel):
         self.text_editor.Bind(wx.EVT_MOUSEWHEEL, callback)
 
     def setup_dragging(self, cb_methods):
+        """
+        Setup callbacks which enable dragging and dropping.
+        """
         (on_left_down, on_mouse_move, on_left_up) = cb_methods
 
         self.stext.Bind(wx.EVT_LEFT_DOWN, on_left_down)

@@ -8,7 +8,7 @@ Items List Panel
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
 import logging
-import weakref
+# import weakref
 from experiments.line_items_panel import LineItemsPanel, DoublyLinkedLinearTree
 from experiments.dragndrop import DragDropMixin
 
@@ -26,13 +26,13 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         self.line_item_panels = []
         self.head_item = DoublyLinkedLinearTree()
         self.head_item.text = "HEAD ITEM"
-        #self.items_weakrefs = []
+        # self.items_weakrefs = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.sizer = sizer
         self.sizer.Add((0, self.padding))
 
-        #self.setup_dragging()
+        # self.setup_dragging()
 
         self.SetSizer(sizer)
         self.SetAutoLayout(1)
@@ -57,23 +57,24 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         pos = self.get_line_item_index(line_item_panel)
         insertion_point = line_item_panel.text_editor.last_cursor_position
 
-        if direction == 1: # Up
+        if direction == 1:  # Up
             if pos > 0:
-                loc = self.find_expanded_item(pos - 1 , 1)
+                loc = self.find_next_visible_item(pos - 1, 1)
             else:
-                loc = self.find_expanded_item(len(self.line_item_panels) - 1, 1)
-        else: # Down
+                loc = self.find_next_visible_item(len(self.line_item_panels) - 1, 1)
+        else:  # Down
             if pos < (len(self.line_item_panels) - 1):
-                loc = self.find_expanded_item(pos + 1, 0)
+                loc = self.find_next_visible_item(pos + 1, 0)
             else:
                 loc = 0
 
         self._set_focus_on_item_for_edit(loc, insertion_point)
 
 
-    def find_expanded_item(self, pos, direction):
+    def find_next_visible_item(self, pos, direction):
+        """ find the next visible item (not contracted) """
         if direction == 1:
-            for i, item in enumerate(reversed(self.line_item_panels[:pos+1])):
+            for i, item in enumerate(reversed(self.line_item_panels[:pos + 1])):
                 if item.IsShown() is True:
                     return pos - i
         else:
@@ -105,6 +106,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
 
 
     def get_line_item_index(self, item):
+        """ index of line item in the line_item_panels list (or sizer list) """
         try:
             return self.line_item_panels.index(item)
         except ValueError:
@@ -117,7 +119,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         Create a line_item, bind callbacks, and return item
         """
         line_item = LineItemsPanel(self, data)
-        #self.items_weakrefs.append(weakref.ref(line_item))
+        # self.items_weakrefs.append(weakref.ref(line_item))
 
         if parent_item == sibling:
             sibling = None
@@ -136,6 +138,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
 
 
     def cb_on_arrow_clicked(self, item, expanded):
+        """ called when an item is expanded or contracted """
         self.SetAutoLayout(1)
         self.SetupScrolling()
 
@@ -143,7 +146,6 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         """
         called when mouse wheel is used on line items
         event.GetWheelRotation() returns Down : 120, Up: -120
-        #TODO: replace 3, -3 with settings values
         """
         if event.GetWheelRotation() > 0:
             self.ScrollLines(-3)
@@ -261,13 +263,16 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         self.head_item = DoublyLinkedLinearTree()
 
 
-    def detach_items_from_UI(self, items):
+    def detach_items_from_ui(self, items):
+        """ detach items - used for removing dragged items """
         for item in items:
             self.line_item_panels.remove(item)
             self.sizer.Detach(item)
             item.Hide()
 
+
     def get_insertion_point_list(self):
+        """ get a list of items and their position in the sizer """
         result = []
         sizer_items = self.sizer.Children
         for i, item in enumerate(sizer_items):
@@ -280,6 +285,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
     def print_tree(self):
         """ print out the tree """
         self.head_item.print_tree()
+
 
     def test_tree(self):
         """ print out the tree """
@@ -295,19 +301,20 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         items = self.line_item_panels
 
         def check_neighbors(item0, item1):
+            """ check if previous and next pointers match up """
             logging.info("now testing %s%s", "  " * item0.level, str(item0))
             assert item1.previous_item == item0
             assert item0.next_item == item1
 
         for i, item in enumerate(items[:-1]):
-            check_neighbors(item, items[i+1])
+            check_neighbors(item, items[i + 1])
 
         logging.info("now testing %s%s", "  " * items[-1].level, str(items[-1]))
-        assert items[-1].next_item == None
+        assert items[-1].next_item is None
 
         logging.info("ui test completed")
 
-        #logging.info("*" * 40)
-        #logging.info("testing for deleted objects")
-        #for item in self.items_weakrefs:
-            #logging.info(item)
+        # logging.info("*" * 40)
+        # logging.info("testing for deleted objects")
+        # for item in self.items_weakrefs:
+        #     logging.info(item)

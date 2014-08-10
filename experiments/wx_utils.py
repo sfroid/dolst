@@ -58,19 +58,21 @@ def get_insertion_pos(parent, text, mouse_pos):
                 return idx2 - 1
             return idx2
         last_width = width
-    def destroy_dummy(parent, child):
+    def destroy(parent, child):
+        """ destory the child items """
         logging.info("dummy destroyed")
         parent.RemoveChild(child)
 
-    wx.CallLater(500, destroy_dummy, parent, dummy_text)
+    wx.CallLater(500, destroy, parent, dummy_text)
     return idx2 + 1
 
 
 def get_image_path(num):
+    """ return image path """
     # TODO - change paths when refactoring
-    fnames = { 1: "arrow_right.png",
-               2: "arrow_down.png",
-               3: "arrow_down.png",}
+    fnames = {1: "arrow_right.png",
+              2: "arrow_down.png",
+              3: "arrow_down.png", }
 
     name = fnames.get(num, "arrow_down.png")
 

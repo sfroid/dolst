@@ -12,7 +12,8 @@ from experiments.linked_tree import DoublyLinkedLinearTree
 from experiments.wx_utils import get_image_path
 
 
-class DropDownArrow(wx.Panel):
+class DropDownIcon(wx.Panel):
+    """ + - icon for line items """
     image1 = None
     image2 = None
     image3 = None
@@ -32,15 +33,19 @@ class DropDownArrow(wx.Panel):
         self.arrow_down.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
         self.arrow_right.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
 
-    def load_images(self):
-        if DropDownArrow.image1 == None:
+
+    def load_images(self):  # pylint: disable=no-self-use
+        """ load the images """
+        if DropDownIcon.image1 is None:
             for i in [1, 2, 3]:
                 attr = "image%s" % (i)
                 image = wx.Image(get_image_path(i), wx.BITMAP_TYPE_PNG).ConvertToBitmap()
-                #image.SetSize((40, 40))
-                setattr(DropDownArrow, attr, image)
+                # image.SetSize((40, 40))
+                setattr(DropDownIcon, attr, image)
+
 
     def cb_on_left_up(self, event):
+        """ on click, toggle betwen + / - """
         if self.expanded is True:
             self.expanded = False
             self.arrow_down.Hide()
@@ -55,9 +60,10 @@ class DropDownArrow(wx.Panel):
 
         self.Refresh()
 
-    def set_callback_on_click(self, cb):
-        self.expand_callback = cb
 
+    def set_callback_on_click(self, callback):
+        """ line item can subscribe to toggle event """
+        self.expand_callback = callback
 
 
 class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
@@ -73,6 +79,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         DoublyLinkedLinearTree.__init__(self)
         self.expanded = True
         self.selected = False
+        self.dd_icon = None
 
         self.text, self.idx, self.complete = data
         self.end_edit_callbacks = []
@@ -80,7 +87,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
         (self.text_editor, self.checkbox,
          self.checkbox_panel, self.sizer,
-         self.spacer) = (None, )*5
+         self.spacer) = (None, ) * 5
 
         self.do_layout()
         self.setup_highlighting()
@@ -92,9 +99,9 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         """
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.arrow = DropDownArrow(self)
-        self.arrow.set_callback_on_click(self.cb_on_arrow_clicked)
-        self.sizer.Add(self.arrow, 0)
+        self.dd_icon = DropDownIcon(self)
+        self.dd_icon.set_callback_on_click(self.cb_on_arrow_clicked)
+        self.sizer.Add(self.dd_icon, 0)
 
         if hasattr(LineItemsPanel, "checkbox_size"):
             size = LineItemsPanel.checkbox_size
@@ -137,8 +144,6 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
             parent = self.get_parent_item()
             parent_parent = parent.get_parent_item()
             if parent_parent is not None:
-                pos = parent_parent.get_child_pos(parent)
-
                 # make siblings after item, children of item
                 siblings_after = parent.get_siblings_after_item(self)
                 for sib in siblings_after:
@@ -171,6 +176,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def set_child_checkboxes(self, value):
+        """ if parent checkbox changes value, do same for children """
         self.checkbox.SetValue(value)
         for child in self.children:
             child.set_child_checkboxes(value)
@@ -178,17 +184,20 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def set_parent_checkbox(self, value):
+        """ if child is cleared, parent is also cleared """
         if value is False:
             parent = self.get_parent_item()
             if hasattr(parent, "checkbox"):
                 parent.checkbox.SetValue(value)
 
 
-    def set_cb_on_arrow_clicked(self, cb):
-        self.callback_on_arrow_click = cb
+    def set_cb_on_arrow_clicked(self, callback):
+        """ method to subscribe to expand / contract """
+        self.callback_on_arrow_click = callback
 
 
     def cb_on_arrow_clicked(self, expanded):
+        """ callback on expand / contract """
         self.expanded = expanded
         if self.expanded is True:
             self.do_expansion()
@@ -200,6 +209,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def do_expansion(self):
+        """ expand this item """
         self.Show()
         if self.expanded:
             for child in self.children:
@@ -207,7 +217,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def do_contraction(self):
-        #self.Hide()
+        """ contract this item """
         for child in self.children:
             child.Hide()
             child.do_contraction()
@@ -218,7 +228,6 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         update the text properties based on the
         checkbox value
         """
-
         if self.checkbox.GetValue():
             props = {
                 "strikethrough": True,
@@ -308,6 +317,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def adjust_indent_level(self):
+        """ set indent level based on parent's level """
         level = self.adjust_level()
         self.sizer.Remove(0)
         self.sizer.Insert(0, (20 * level, 0))
@@ -318,11 +328,15 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def setup_dragging(self, drag_handler):
+        """ set callbacks for dragging """
         def on_left_down(event):
+            """ left down callback """
             drag_handler.cb_on_left_down(event, self)
         def on_mouse_move(event):
+            """ mouse move callback """
             drag_handler.cb_on_mouse_move(event, self)
         def on_left_up(event):
+            """ left up callback """
             drag_handler.cb_on_left_up(event, self)
 
         self.Bind(wx.EVT_LEFT_DOWN, on_left_down)
@@ -334,27 +348,35 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
 
     def setup_highlighting(self):
+        """ events for supporting highlighting on hover """
         self.Bind(wx.EVT_ENTER_WINDOW, self.cb_mouse_on_item)
         self.Bind(wx.EVT_LEAVE_WINDOW, self.cb_mouse_left_item)
 
+
     def cb_mouse_on_item(self, event):
+        """ highlight on hover """
+        # TODO : replace magic numbers by settings
         self.SetBackgroundColour("#ffddaa")
         self.checkbox_panel.SetBackgroundColour("#ffddaa")
         self.text_editor.SetBackgroundColour("#ffddaa")
-        self.arrow.SetBackgroundColour("#ffddaa")
+        self.dd_icon.SetBackgroundColour("#ffddaa")
         self.Refresh()
 
     def cb_mouse_left_item(self, event):
+        """ remove highlight """
+        # TODO : replace magic numbers by settings
         self.SetBackgroundColour("#ffffff")
         self.checkbox_panel.SetBackgroundColour("#ffffff")
         self.text_editor.SetBackgroundColour("#ffffff")
-        self.arrow.SetBackgroundColour("#ffffff")
+        self.dd_icon.SetBackgroundColour("#ffffff")
         self.Refresh()
 
 
     def __str__(self):
+        """ string representation """
         return self.text
 
 
     def __repr__(self):
+        """ string representation """
         return self.text

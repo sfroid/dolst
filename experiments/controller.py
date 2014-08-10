@@ -31,14 +31,14 @@ class Controller(object):
         return frame
 
 
-    def _init_data_model(self): # pylint: disable=no-self-use
+    def _init_data_model(self):  # pylint: disable=no-self-use
         """
         Initialize the data model
         """
         logging.info("Intializing data model")
 
 
-    def _get_category_data(self): # pylint: disable=no-self-use
+    def _get_category_data(self):  # pylint: disable=no-self-use
         """
         Get list of categories from the data model
         """
@@ -65,7 +65,6 @@ class Controller(object):
         """
         Get list of category items from the data model
         """
-        from random import randint
         return [self._dummy_get_item("%s:%s" % (category_name, x))
                 for x in range(0, 2)]
 

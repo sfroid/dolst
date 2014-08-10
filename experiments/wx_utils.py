@@ -57,6 +57,11 @@ def get_insertion_pos(parent, text, mouse_pos):
                 return idx2 - 1
             return idx2
         last_width = width
+    def destroy_dummy(parent, child):
+        print "dummy destroyed"
+        parent.RemoveChild(child)
+
+    wx.CallLater(500, destroy_dummy, parent, dummy_text)
     return idx2 + 1
 
 

@@ -10,89 +10,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 import logging
 import weakref
 from experiments.line_items_panel import LineItemsPanel, DoublyLinkedLinearTree
-
-
-class DragDropMixin(object):
-    def __init__(self):
-        self.dragging = False
-        self.left_down = False
-        self.left_down_position = None
-        self.dragged_data = {}
-        self.coord_shift = None
-        pass
-
-    def on_drag_start(self):
-        print "starting drag"
-        self.dragging = True
-
-
-    def on_drag_end(self):
-        print "ending drag"
-        self.dragging = False
-
-    def cb_on_left_down(self, event, item):
-        print "left down on item %s" % str(item)
-        self.left_down = True
-        ipos = self.ScreenToClient(item.GetPositionTuple())
-        mpos = self.ScreenToClient(wx.GetMousePosition())
-
-        self.dx, self.dy = (ipos[0] - mpos[0], ipos[1] - mpos[1])
-
-        self.left_down_position = event.GetPositionTuple()
-        event.Skip()
-
-    def cb_on_mouse_move(self, event, item):
-        if (self.dragging is False) and (self.left_down is True):
-            pos = event.GetPosition()
-            if self.square_distance(pos, self.left_down_position) > 100:
-                self.start_dragging(event, item)
-        elif self.dragging is True:
-            self.continue_dragging(event)
-        else:
-            event.Skip()
-
-    def start_dragging(self, event, item):
-        print "starting to drag %s" % item
-        self.dragging = True
-        self.dragged_data['tree_item'] = item
-
-        # move out the item tree from the tree
-        isinstance(item, LineItemsPanel)
-
-        item.remove_tree_from_parent()
-
-        # and move out the UI elements
-        all_items = [item] + item.get_all_children()
-        self.detach_items_from_UI(all_items[1:])
-        self.dragged_data['ui_items'] = all_items
-        item.Raise()
-        self.continue_dragging(event)
-
-        self.Layout()
-
-    def continue_dragging(self, event):
-        item = self.dragged_data.get('tree_item', None)
-        if item is not None:
-            print "continuing to drag item"
-            x, y = wx.GetMousePosition()
-            item.SetPosition(wx.Point(x + self.dx, y + self.dy))
-            item.Refresh()
-
-
-    def cb_on_left_up(self, event, item):
-        self.left_down = False
-        if self.dragging is True:
-            self.dragging = False
-            self.dragged_data = {}
-
-            print "end dragging"
-        else:
-            event.Skip()
-
-    def square_distance(self, p, q):
-        a1, a2 = p
-        b1, b2 = q
-        return ( (a1 - b1)**2 + (a2 - b2)**2 )
+from experiments.dragndrop import DragDropMixin
 
 
 class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-ancestors
@@ -175,13 +93,13 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
 
         if line_item_panel.expanded is True:
             if line_item_panel.get_child_count() > 0:
-                self._insert_new_item(pos, line_item_panel, line_item_panel)
+                self._insert_new_item(pos + 1, line_item_panel, line_item_panel)
             else:
-                self._insert_new_item(pos, line_item_panel.get_parent_item(), line_item_panel)
+                self._insert_new_item(pos + 1, line_item_panel.get_parent_item(), line_item_panel)
         else:
             line_item_tree_bottom = line_item_panel.get_tree_bottom_item()
             pos = self.get_line_item_index(line_item_tree_bottom)
-            self._insert_new_item(pos, line_item_panel.get_parent_item(), line_item_panel)
+            self._insert_new_item(pos + 1, line_item_panel.get_parent_item(), line_item_panel)
 
         self._set_focus_on_item_for_edit(pos + 1)
 
@@ -274,13 +192,13 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         line_item_panel = self.create_line(parent_item, previous_item,
                                            ("", 23423, False))
 
-        if pos == len(self.line_item_panels) - 1:
+        if pos == len(self.line_item_panels):
             self.sizer.Add(line_item_panel, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
             self.line_item_panels.append(line_item_panel)
         else:
-            self.sizer.Insert(pos + 1, line_item_panel, 0,
+            self.sizer.Insert(pos, line_item_panel, 0,
                               wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
-            self.line_item_panels.insert(pos + 1, line_item_panel)
+            self.line_item_panels.insert(pos, line_item_panel)
 
         self.SetAutoLayout(1)
         self.SetupScrolling()
@@ -345,10 +263,18 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
 
     def detach_items_from_UI(self, items):
         for item in items:
-            #item.Hide()
-            pos = self.line_item_panels.index(item)
-            self.line_item_panels.pop(pos)
+            self.line_item_panels.remove(item)
             self.sizer.Detach(item)
+            item.Hide()
+
+    def get_insertion_point_list(self):
+        result = []
+        sizer_items = self.sizer.Children
+        for i, item in enumerate(sizer_items):
+            item = item.GetWindow()
+            if item.IsShown():
+                result.append((i, item, item.GetPosition()[1]))
+        return result
 
 
     def print_tree(self):

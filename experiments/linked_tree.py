@@ -169,6 +169,13 @@ class DoublyLinkedLinearTree(object):
     def get_children(self):
         return self.children
 
+    def has_child(self, item):
+        try:
+            index = self.children.index(item)
+            return True
+        except ValueError:
+            return False
+
     def get_all_children(self):
         all_children = self.children[:]
         for child in self.children:

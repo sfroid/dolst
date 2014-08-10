@@ -1,10 +1,11 @@
 import wx
+import logging
 
 app = wx.App(False)
 d = {}
 
 def wMouseDown(e):
-    print "!!!", e.GetEventObject()
+    logging.info("!!! %s", e.GetEventObject())
 
 def MouseDown(e):
     o           = e.GetEventObject()
@@ -50,4 +51,5 @@ panel.SetSizer(box)
 panel.Layout()
 frame.Show()
 
+logging.getLogger().setLevel(logging.INFO)
 app.MainLoop()

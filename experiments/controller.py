@@ -5,6 +5,7 @@ Manages the view, data source, their
 initialization and communication between them.
 """
 import wx
+import logging
 from experiments.event_bus import call_on_category_sel_event
 from experiments.top_frame import DolstTopFrame
 
@@ -34,7 +35,7 @@ class Controller(object):
         """
         Initialize the data model
         """
-        print "Intializing data model"
+        logging.info("Intializing data model")
 
 
     def _get_category_data(self): # pylint: disable=no-self-use
@@ -55,7 +56,7 @@ class Controller(object):
         """
         Called when selected category is changed.
         """
-        print "received category selection event"
+        logging.info("received category selection event")
         cat_name = event.item.text
         self._update_items_view(self._get_items_data(cat_name))
 
@@ -111,6 +112,7 @@ def main():
     """
     Main entry point for the controller
     """
+    logging.getLogger().setLevel(logging.INFO)
     app = wx.App(False)
     controller = Controller()
     app.view_top_frame = controller.view

@@ -6,6 +6,7 @@ Drag and drop mixing class for Items List Panel
 """
 
 import wx
+import logging
 from experiments.line_items_panel import LineItemsPanel
 
 class DragDropMixin(object):
@@ -17,16 +18,16 @@ class DragDropMixin(object):
         self.dx, self.dy = 0, 0
 
     def on_drag_start(self):
-        print "starting drag"
+        logging.debug("starting drag")
         self.dragging = True
 
 
     def on_drag_end(self):
-        print "ending drag"
+        logging.debug("ending drag")
         self.dragging = False
 
     def cb_on_left_down(self, event, item):
-        print "left down on item %s" % str(item)
+        logging.debug("left down on item %s", str(item))
         self.left_down = True
         ipos = self.ScreenToClient(item.GetPositionTuple())
         mpos = self.ScreenToClient(wx.GetMousePosition())
@@ -48,7 +49,7 @@ class DragDropMixin(object):
             event.Skip()
 
     def start_dragging(self, event, item):
-        print "starting to drag %s" % item
+        logging.debug("starting to drag %s", item)
         self.dragging = True
         self.dragged_data['tree_item'] = item
 
@@ -81,11 +82,10 @@ class DragDropMixin(object):
         item = self.dragged_data.get('tree_item', None)
         if item is not None:
             x, y = wx.GetMousePosition()
-            #print "continuing to drag item: %3d %3d" % (x, y)
 
             posy = (y + self.dy)
             new_insertion_point = self.get_insertion_point(self.insertions_points, posy)
-            print "new insertion point : %s at %s" % (new_insertion_point, posy)
+            logging.debug("new insertion point : %s at %s", new_insertion_point, posy)
 
             if new_insertion_point != self.old_insertion_point:
                 self.adjust_item_location(item, new_insertion_point, self.old_insertion_point)
@@ -99,7 +99,7 @@ class DragDropMixin(object):
     def cb_on_left_up(self, event, item):
         self.left_down = False
         if self.dragging is True:
-            print "end dragging"
+            logging.debug("end dragging")
             self.finish_dragging(item)
 
             self.dragging = False
@@ -183,7 +183,7 @@ class DragDropMixin(object):
     def get_insertion_point(self, ipoints, pos):
         for i, item, ipt in ipoints:
             if pos < ipt:
-                print "insertion point is %s" % (i - 1)
+                logging.debug("insertion point is %s", i - 1)
                 return (i-1) if i > 0 else 0
         return len(ipoints) - 1
 

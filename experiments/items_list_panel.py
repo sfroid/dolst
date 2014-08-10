@@ -89,7 +89,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         when enter pressed while editing, add new item
         """
         pos = self.get_line_item_index(line_item_panel)
-        print "inserting new item after pos : %s" % pos
+        logging.debug("inserting new item after pos : %s", pos)
 
         if line_item_panel.expanded is True:
             if line_item_panel.get_child_count() > 0:
@@ -283,31 +283,31 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
 
     def test_tree(self):
         """ print out the tree """
-        print "\n\n"
-        print "*" * 40
-        print "tree test started"
+        logging.info("\n\n")
+        logging.info("*" * 40)
+        logging.info("tree test started")
         for child in self.head_item.children:
             child.test_tree()
-        print "tree test completed"
+        logging.info("tree test completed")
 
-        print "*" * 40
-        print "ui test started"
+        logging.info("*" * 40)
+        logging.info("ui test started")
         items = self.line_item_panels
 
         def check_neighbors(item0, item1):
-            print "now testing %s%s" % ("  " * item0.level, str(item0))
+            logging.info("now testing %s%s", "  " * item0.level, str(item0))
             assert item1.previous_item == item0
             assert item0.next_item == item1
 
         for i, item in enumerate(items[:-1]):
             check_neighbors(item, items[i+1])
 
-        print "now testing %s%s" % ("  " * items[-1].level, str(items[-1]))
+        logging.info("now testing %s%s", "  " * items[-1].level, str(items[-1]))
         assert items[-1].next_item == None
 
-        print "ui test completed"
+        logging.info("ui test completed")
 
-        #print "*" * 40
-        #print "testing for deleted objects"
+        #logging.info("*" * 40)
+        #logging.info("testing for deleted objects")
         #for item in self.items_weakrefs:
-            #print item
+            #logging.info(item)

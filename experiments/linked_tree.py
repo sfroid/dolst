@@ -156,9 +156,9 @@ class DoublyLinkedLinearTree(object):
 
     def print_tree(self):
         if hasattr(self, "text"):
-            print self.text
+            logging.info(self.text)
         else:
-            print "HEAD"
+            logging.info("HEAD")
         if self.next_item is not None:
             self.next_item.print_tree()
 
@@ -184,25 +184,25 @@ class DoublyLinkedLinearTree(object):
 
     def test_tree(self):
         # parent child
-        print "now testing %s%s" % ("  " * self.level, str(self))
+        logging.info("now testing %s%s", "  " * self.level, str(self))
         tab = "    "
 
         try:
             assert self in self.parent_item.children
         except:
-            print tab + "Child %s not in parent %s's children" % (self, self.parent_item)
+            logging.info(tab + "Child %s not in parent %s's children", self, self.parent_item)
 
         try:
             assert self == self.previous_item.next_item
         except:
-            print tab + "Item %s is not next of previous %s but %s is next" % (self,
+            logging.info(tab + "Item %s is not next of previous %s but %s is next", self,
                                                                        self.previous_item,
                                                                        self.previous_item.next_item)
         if self.next_item is not None:
             try:
                 assert self.next_item.previous_item == self
             except:
-                print tab + "Item %s is not previous of next %s but %s is previous" % (self,
+                logging.info(tab + "Item %s is not previous of next %s but %s is previous", self,
                                                                            self.next_item,
                                                                            self.next_item.previous_item)
 

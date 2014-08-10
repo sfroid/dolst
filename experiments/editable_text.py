@@ -6,6 +6,7 @@ Editable text panel
 """
 
 import wx
+import logging
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
 from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
 
@@ -157,7 +158,7 @@ class EditableText(wx.Panel):
         Used for handling "Enter", "Esc" and the "Up" and "Down" keys.
         """
         key = event.GetKeyCode()
-        #print "Keycode : %s" % key
+        logging.debug("Keycode : %s", key)
 
         if key == wx.WXK_RETURN:
             if not (event.controlDown or
@@ -389,4 +390,4 @@ def stop_editing_category_name(item):
     """
     if item.editing_text is True:
         item.end_edit(True, "lost_focus")
-        print "finished editing"
+        logging.debug("finished editing")

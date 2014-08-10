@@ -16,6 +16,7 @@ python files in that folder (folders are searched recursively).
 
 import os
 import sys
+import logging
 from utilities.filesearchutilities import get_files_from_arguments
 from collections import OrderedDict
 
@@ -42,7 +43,7 @@ def run_test(command, fpattern):
     """
     files = get_files_from_arguments(sys.argv[1:], fpattern)
     bad_files = []
-    print "\nRunning test : %s\n" % command
+    logging.info("\nRunning test : %s\n" % command)
 
     for fname in files:
         result = os.system("%s %s" % (command, fname))
@@ -50,7 +51,7 @@ def run_test(command, fpattern):
             bad_files.append(fname)
 
     if len(bad_files) > 0:
-        print "\nBAD_FILES=%s" % (",".join(bad_files))
+        logging.info( "\nBAD_FILES=%s" % (",".join(bad_files)))
 
 
 def what_tests_to_run(args):
@@ -81,4 +82,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.getLogger().setLevel(logging.INFO)
     main()

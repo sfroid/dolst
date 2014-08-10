@@ -7,6 +7,7 @@ data modification changes, etc go here.
 
 import wx
 import wx.lib.newevent
+import logging
 
 
 CATEGORY_SEL_CHANGED, EVT_CAT_SEL_CHANGED = wx.lib.newevent.NewEvent()
@@ -66,14 +67,14 @@ def test2():
         """
         event callback function
         """
-        print "Arrived in the event handler"
+        logging.debug("Arrived in the event handler")
 
     # create an event
-    print "creating and binding the event"
+    logging.debug("creating and binding the event")
     some_new_event, evt_some_new_event = wx.lib.newevent.NewEvent()
     eventbus.Bind(evt_some_new_event, cb_test3)
 
-    print "firing the event"
+    logging.debug("firing the event")
     evt = some_new_event(attr1="what's up")
     wx.PostEvent(eventbus, evt)
 
@@ -83,6 +84,7 @@ def test():
     """
     Mini test for get_event_bus and EventBus class
     """
+    logging.getLogger().setLevel(logging.INFO)
     app = wx.App(False)
     frame = wx.Frame(None, -1, "hello")
     frame.CenterOnScreen()
@@ -90,7 +92,7 @@ def test():
     wx.CallAfter(test2)
     app.MainLoop()
 
-    print "test completed"
+    logging.debug("test completed")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ Wx related UI utility functions go here
 
 import wx
 import os
+import logging
 
 def expanded(widget, flags=None, padding=0):
     """
@@ -58,7 +59,7 @@ def get_insertion_pos(parent, text, mouse_pos):
             return idx2
         last_width = width
     def destroy_dummy(parent, child):
-        print "dummy destroyed"
+        logging.info("dummy destroyed")
         parent.RemoveChild(child)
 
     wx.CallLater(500, destroy_dummy, parent, dummy_text)

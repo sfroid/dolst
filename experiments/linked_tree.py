@@ -16,6 +16,14 @@ class DoublyLinkedLinearTree(object):
          self.next_item,
          self.children,
          self.level) = (None, None, None, [], -1)
+        self.instance = None
+
+
+    def set_instance(self, instance):
+        """ set the instance variable """
+        from experiments.line_items_panel import LineItemsPanel
+        self.instance = instance
+        isinstance(self.instance, LineItemsPanel)
 
 
     def append_child_tree(self, tree_root):
@@ -143,7 +151,7 @@ class DoublyLinkedLinearTree(object):
     def set_parent_item(self, parent_item):
         """ set the parent item """
         self.parent_item = parent_item
-        self.adjust_indent_level()
+        self.instance.adjust_indent_level()
 
 
     def delete_item_from_tree(self):
@@ -179,8 +187,8 @@ class DoublyLinkedLinearTree(object):
 
     def print_tree(self):
         """ print out the tree in a recursive manner """
-        if hasattr(self, "text"):
-            logging.info(self.text)
+        if hasattr(self.instance, "text"):
+            logging.info(self.instance.text)
         else:
             logging.info("HEAD")
         if self.next_item is not None:

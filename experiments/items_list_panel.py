@@ -21,11 +21,13 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
     def __init__(self, parent):
         ScrolledPanel.__init__(self, parent, -1)
         DragDropMixin.__init__(self)
+        DragDropMixin.set_instance(self, self)
+
         self.border = 1
         self.padding = 5
         self.line_item_panels = []
-        self.head_item = DoublyLinkedLinearTree()
-        self.head_item.text = "HEAD ITEM"
+        self.head_item = None
+        self.init_head_item()
         # self.items_weakrefs = []
 
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -260,7 +262,14 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         """
         self.line_item_panels = []
         self.sizer.Clear(True)
+        self.init_head_item()
+
+
+    def init_head_item(self):
+        """ init the head item placeholder """
         self.head_item = DoublyLinkedLinearTree()
+        self.head_item.set_instance(self.head_item)
+        self.head_item.text = "HEAD ITEM"
 
 
     def detach_items_from_ui(self, items):

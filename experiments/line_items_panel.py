@@ -77,6 +77,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
     def __init__(self, parent, data):
         wx.Panel.__init__(self, parent)
         DoublyLinkedLinearTree.__init__(self)
+        DoublyLinkedLinearTree.set_instance(self, self)
         self.expanded = True
         self.selected = False
         self.dd_icon = None

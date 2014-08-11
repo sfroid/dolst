@@ -25,7 +25,7 @@ class Controller(object):
         """
         Initialize the view
         """
-        frame = DolstTopFrame("Todo list panel", (500, 500))
+        frame = DolstTopFrame("To-do list panel", (500, 500))
         frame.CenterOnScreen()
         frame.Show(True)
         return frame
@@ -75,7 +75,7 @@ class Controller(object):
         """
         # TODO : make this a call into self.view
         # rather than into view.items_panel
-        self.view.items_panel.clear_and_add_items(data)
+        self.view.clear_and_add_items(data)
 
 
     def _update_category_data(self):

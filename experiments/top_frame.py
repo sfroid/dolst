@@ -32,11 +32,17 @@ class DolstTopFrame(wx.Frame):
         self.menubar = create_menu_bar(self)
         self.SetMenuBar(self.menubar)
 
+
     def update_category_view(self, data):
         """
         Updates/Redraws the category view with the given data
         """
         self.category_panel.update_data(data)
+
+
+    def clear_and_add_items(self, items):
+        """ clear items panel and add new ones """
+        self.items_panel.clear_and_add_items(items)
 
 
 def main():

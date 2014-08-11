@@ -3,6 +3,7 @@ Main menu for the dolst app.
 """
 
 import wx
+import logging
 
 
 def on_key_press(event):
@@ -10,7 +11,8 @@ def on_key_press(event):
     Called on a key press
     """
     keycode = event.GetKeyCode()
-    print "got key %s" % keycode
+    logging.info("got key %s", keycode)
+
 
 def main():
     """
@@ -22,6 +24,8 @@ def main():
     panel.Bind(wx.EVT_KEY_DOWN, on_key_press)
     frame.Show()
     app.MainLoop()
+    return
 
 
+logging.getLogger().setLevel(logging.INFO)
 main()

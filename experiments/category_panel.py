@@ -11,7 +11,7 @@ from experiments.editable_text import DoubleClickEditor, stop_editing_category_n
 from experiments.event_bus import notify_category_sel_event
 
 
-class CategoryListPanel(ScrolledPanel):
+class CategoryListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
     """
     Panel to hold a list of line item panels.
     It also supports drag and drop of items.

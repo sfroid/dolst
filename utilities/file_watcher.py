@@ -14,7 +14,7 @@ from settings import settings
 try:
     from utilities.filesearchutilities import get_files_from_arguments
 except ImportError:
-    print "Could not import utilities. Have you sourced the environment?"
+    logging.error("Could not import utilities. Have you sourced the environment?")
     exit()
 
 FULL_TEST_RUN_TIME = 3600
@@ -92,9 +92,9 @@ def run_tests_on_changes(command, file_data, dirty_files):
     if len(new_and_modified) > 0:
         os.system("reset")
         dirty_files, result = run_tests(command, all_to_test)
-        print result
+        logging.info(result)
     else:
-        print "Nothing to test/report. Time = %s" % time.ctime()
+        logging.info("Nothing to test/report. Time = %s", time.ctime())
 
     return dirty_files
 
@@ -105,6 +105,8 @@ def main(kwargs):
     """
     command = kwargs.pop('command', COMMAND)
     only_modified = kwargs.pop('only_modified', False)
+    args = kwargs.pop('argv', [])
+    command = command + args
 
     dirty_files = set()
 
@@ -116,7 +118,7 @@ def main(kwargs):
         os.system("reset")
         dirty_files, result = run_tests(command)
         last_full_test_time = time.time()
-        print result
+        logging.info(result)
 
 
     while 1:
@@ -131,7 +133,7 @@ def main(kwargs):
             if (time.time() - last_full_test_time) > FULL_TEST_RUN_TIME:
                 last_full_test_time = time.time()
                 dirty_files, result = run_tests(command)
-                print result
+                logging.info(result)
                 continue
 
         dirty_files = run_tests_on_changes(command,
@@ -150,10 +152,14 @@ def parse_args():
     run_on_only_modified = False
     if len(sys.argv) > 1:
         if sys.argv[1] == "only_modified":
+            sys.argv = sys.argv[2:]
             logging.info("Only running tests on changes")
             run_on_only_modified = True
+        else:
+            sys.argv = sys.argv[1:]
 
-    return {"only_modified": run_on_only_modified}
+    return {"only_modified": run_on_only_modified,
+            "argv": sys.argv}
 
 
 

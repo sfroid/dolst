@@ -5,6 +5,7 @@ Manages the view, data source, their
 initialization and communication between them.
 """
 import wx
+import logging
 from experiments.event_bus import call_on_category_sel_event
 from experiments.top_frame import DolstTopFrame
 
@@ -20,7 +21,7 @@ class Controller(object):
         call_on_category_sel_event(self._on_category_selection)
 
 
-    def _init_view(self):
+    def _init_view(self):  # pylint: disable=no-self-use
         """
         Initialize the view
         """
@@ -30,18 +31,18 @@ class Controller(object):
         return frame
 
 
-    def _init_data_model(self):
+    def _init_data_model(self):  # pylint: disable=no-self-use
         """
         Initialize the data model
         """
-        print "Intializing data model"
+        logging.info("Intializing data model")
 
 
-    def _get_category_data(self):
+    def _get_category_data(self):  # pylint: disable=no-self-use
         """
         Get list of categories from the data model
         """
-        return ["Category %s" % x for x in range(1, 8)]
+        return ["C%s" % x for x in range(1, 8)]
 
 
     def _update_category_view(self, data):
@@ -55,7 +56,7 @@ class Controller(object):
         """
         Called when selected category is changed.
         """
-        print "received category selection event"
+        logging.info("received category selection event")
         cat_name = event.item.text
         self._update_items_view(self._get_items_data(cat_name))
 
@@ -64,9 +65,8 @@ class Controller(object):
         """
         Get list of category items from the data model
         """
-        from random import randint
-        return [self._dummy_get_item("%s: Item %s" % (category_name, x))
-                for x in range(randint(0, 5), randint(6, 10))]
+        return [self._dummy_get_item("%s:%s" % (category_name, x))
+                for x in range(0, 2)]
 
 
     def _update_items_view(self, data):
@@ -92,7 +92,7 @@ class Controller(object):
         pass
 
 
-    def _dummy_get_item(self, text, depth=3):
+    def _dummy_get_item(self, text, depth=2):
         """
         Recursive method which returns a tree of items
         """
@@ -100,8 +100,8 @@ class Controller(object):
         idx = randint(10000, 20000)
         completed = (0 < randint(1, 10) < 6)
         if depth > 0:
-            children = tuple([self._dummy_get_item("%s : Child %s" % (text, d), depth - 1)
-                              for d in range(randint(0, 2))])
+            children = tuple([self._dummy_get_item("%s:%s" % (text, d), depth - 1)
+                              for d in range(2)])
         else:
             children = []
         return (text, idx, completed, children)
@@ -111,6 +111,7 @@ def main():
     """
     Main entry point for the controller
     """
+    logging.getLogger().setLevel(logging.INFO)
     app = wx.App(False)
     controller = Controller()
     app.view_top_frame = controller.view

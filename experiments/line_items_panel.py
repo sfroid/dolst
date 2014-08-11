@@ -8,8 +8,89 @@ The Line panel which holds the editable text and other widgets.
 import wx
 import logging
 from experiments.editable_text import EditableText
+from experiments.linked_tree import DoublyLinkedLinearTree
+from experiments.wx_utils import get_image_path
 
-class LineItemsPanel(wx.Panel):
+
+class DropDownIcon(wx.Panel):
+    """ + - icon for line items """
+    image1 = None # minus dark grey
+    image2 = None # minus black
+    image3 = None # minus light
+    image4 = None # plus dark
+    image5 = None # plus black
+    image6 = None # plus light
+
+    def __init__(self, parent):
+        wx.Panel.__init__(self, parent)
+        self.expand_callback = None
+        self.expanded = True
+
+        self.load_images()
+
+        self.minus_dark = wx.StaticBitmap(self, -1, self.image1, pos=(0, 0))
+        self.minus_black = wx.StaticBitmap(self, -1, self.image2, pos=(0, 0))
+        self.minus_light = wx.StaticBitmap(self, -1, self.image3, pos=(0, 0))
+        self.plus_dark = wx.StaticBitmap(self, -1, self.image4, pos=(0, 0))
+        self.plus_black = wx.StaticBitmap(self, -1, self.image5, pos=(0, 0))
+        self.plus_light = wx.StaticBitmap(self, -1, self.image6, pos=(0, 0))
+
+        self.show_icon("minus_light")
+
+        for attr in ["minus_dark", "minus_black", "minus_light",
+                             "plus_dark", "plus_black", "plus_light"]:
+            image = getattr(self, attr)
+            image.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+
+        self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+
+
+    def show_icon(self, attr):
+        """ hide all the show only one icon """
+        self.hide_all()
+        image = getattr(self, attr, None)
+        if image is not None:
+            image.Show()
+
+
+    def hide_all(self):
+        """ hide all the icons """
+        for attr in ["minus_dark", "minus_black", "minus_light",
+                     "plus_dark", "plus_black", "plus_light"]:
+            image = getattr(self, attr)
+            image.Hide()
+
+
+    def load_images(self):  # pylint: disable=no-self-use
+        """ load the images """
+        if DropDownIcon.image1 is None:
+            for i in range(1, 7):
+                attr = "image%s" % (i)
+                image = wx.Image(get_image_path(i), wx.BITMAP_TYPE_PNG).ConvertToBitmap()
+                setattr(DropDownIcon, attr, image)
+
+
+    def cb_on_left_up(self, event):
+        """ on click, toggle betwen + / - """
+        if self.expanded is True:
+            self.expanded = False
+            self.show_icon("plus_black")
+        else:
+            self.expanded = True
+            self.show_icon("minus_light")
+
+        if self.expand_callback is not None:
+            self.expand_callback(self.expanded)
+
+        self.Refresh()
+
+
+    def set_callback_on_click(self, callback):
+        """ line item can subscribe to toggle event """
+        self.expand_callback = callback
+
+
+class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
     """
     A wx.Panel which holds a line of elements like
     dropdown arrow, checkbox, editable text, gear icon, etc.
@@ -17,18 +98,24 @@ class LineItemsPanel(wx.Panel):
     This can also be dragged, but drag drop is handled by the
     parent widget (another wx panel probably).
     """
-    def __init__(self, parent, parent_item, previous_item, data):
+    def __init__(self, parent, data):
         wx.Panel.__init__(self, parent)
+        DoublyLinkedLinearTree.__init__(self)
+        DoublyLinkedLinearTree.set_instance(self, self)
+        self.expanded = True
+        self.selected = False
+        self.dd_icon = None
 
-        self.parent_item = parent_item
-        self.previous_item = previous_item
-        self.next_item = None
-
-        self.text, self.idx, self.complete, self.level = data
+        self.text, self.idx, self.complete = data
         self.end_edit_callbacks = []
-        self.child_items = []
+        self.callback_on_arrow_click = None
+
+        (self.text_editor, self.checkbox,
+         self.checkbox_panel, self.sizer,
+         self.spacer) = (None, ) * 5
 
         self.do_layout()
+        self.setup_highlighting()
 
 
     def do_layout(self):
@@ -36,6 +123,10 @@ class LineItemsPanel(wx.Panel):
         set the layout and background color
         """
         self.sizer = sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.dd_icon = DropDownIcon(self)
+        self.dd_icon.set_callback_on_click(self.cb_on_arrow_clicked)
+        self.sizer.Add(self.dd_icon, 0, wx.CENTER, 5)
 
         if hasattr(LineItemsPanel, "checkbox_size"):
             size = LineItemsPanel.checkbox_size
@@ -60,8 +151,7 @@ class LineItemsPanel(wx.Panel):
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
         sizer.Add(self.text_editor, 1, wx.EXPAND)
 
-        if self.level > 0:
-            self.sizer.Insert(0, (20 * self.level, 0))
+        self.spacer = self.sizer.Insert(0, (20 * self.level, 0))
 
         self.set_background_color("#ffffff")
         self.update_text_view()
@@ -71,52 +161,31 @@ class LineItemsPanel(wx.Panel):
         self.Layout()
 
 
-    def set_next_item(self, next_item):
-        """
-        set the next item
-        """
-        self.next_item = next_item
-
-
-    def set_previous_item(self, previous_item):
-        """
-        set the previous item
-        """
-        self.previous_item = previous_item
-
-
-    def add_child(self, child):
-        """
-        append a child item to this item
-        """
-        self.child_items.append(child)
-
-
-    def get_child_count(self):
-        """
-        returns the number of children
-        """
-        return len(self.child_items)
-
-
     def cb_on_tab_pressed(self, item, shift_pressed):
         """
         Evt handler - called when tab is pressed while editing text
         """
-        # add a spacer when spacer added
-        changed = False
-
         if shift_pressed is True:
-            item0 = self.sizer.GetItem(0)
-            if item0.IsSpacer():
-                self.sizer.Remove(0)
-                changed = True
-        else:
-            self.sizer.Insert(0, (15, 0))
-            changed = True
+            parent = self.get_parent_item()
+            parent_parent = parent.get_parent_item()
+            if parent_parent is not None:
+                # make siblings after item, children of item
+                siblings_after = parent.get_siblings_after_item(self)
+                for sib in siblings_after:
+                    parent.remove_child_tree(sib)
+                    self.append_child_tree(sib)
 
-        if changed is True:
-            self.Layout()
+                parent.remove_child_tree(self)
+                parent_parent.insert_after(self, parent)
+        else:
+            sibling = self.get_prev_item_at_same_level()
+            # do something only if same level sibling found
+            # else, item is first child of parent, so do nothing
+            if sibling is not None:
+                self.remove_tree_from_parent()
+                sibling.append_child_tree(self)
+
+        self.adjust_indent_level()
 
 
     def cb_on_toggle_checkbox(self, event):
@@ -126,14 +195,64 @@ class LineItemsPanel(wx.Panel):
         # if checkbox is checked, show text in strikethrough
         logging.info("checkbox value: %s", self.checkbox.GetValue())
 
+        value = self.checkbox.GetValue()
+        self.set_child_checkboxes(value)
+        self.set_parent_checkbox(value)
+
+
+    def set_child_checkboxes(self, value):
+        """ if parent checkbox changes value, do same for children """
+        self.checkbox.SetValue(value)
+        for child in self.children:
+            child.set_child_checkboxes(value)
         self.update_text_view()
+
+
+    def set_parent_checkbox(self, value):
+        """ if child is cleared, parent is also cleared """
+        if value is False:
+            parent = self.get_parent_item()
+            if hasattr(parent, "checkbox"):
+                parent.checkbox.SetValue(value)
+
+
+    def set_cb_on_arrow_clicked(self, callback):
+        """ method to subscribe to expand / contract """
+        self.callback_on_arrow_click = callback
+
+
+    def cb_on_arrow_clicked(self, expanded):
+        """ callback on expand / contract """
+        self.expanded = expanded
+        if self.expanded is True:
+            self.do_expansion()
+        else:
+            self.do_contraction()
+
+        if self.callback_on_arrow_click is not None:
+            self.callback_on_arrow_click(self, expanded)
+
+
+    def do_expansion(self):
+        """ expand this item """
+        self.Show()
+        if self.expanded:
+            for child in self.children:
+                child.do_expansion()
+
+
+    def do_contraction(self):
+        """ contract this item """
+        for child in self.children:
+            child.Hide()
+            child.do_contraction()
+
 
     def update_text_view(self):
         """
         update the text properties based on the
         checkbox value
         """
-
         if self.checkbox.GetValue():
             props = {
                 "strikethrough": True,
@@ -143,6 +262,8 @@ class LineItemsPanel(wx.Panel):
             self.text_editor.set_text_properties(props)
         else:
             self.text_editor.reset_text_properties()
+
+        self.Layout()
 
 
     def callback_on_end_textedit(self, callback, reason=None):
@@ -174,6 +295,7 @@ class LineItemsPanel(wx.Panel):
         key_escape
         lost_focus
         """
+        self.text = editor.text
         for callback, acc_rs in self.end_edit_callbacks:
             if isinstance(acc_rs, tuple):
                 if reason in acc_rs:
@@ -217,3 +339,69 @@ class LineItemsPanel(wx.Panel):
         self.checkbox.Bind(wx.EVT_MOUSEWHEEL, callback)
         self.checkbox_panel.Bind(wx.EVT_MOUSEWHEEL, callback)
         self.text_editor.pass_wheel_scrolls_to(callback)
+
+
+    def adjust_indent_level(self):
+        """ set indent level based on parent's level """
+        level = self.adjust_level()
+        self.sizer.Remove(0)
+        self.sizer.Insert(0, (20 * level, 0))
+
+        for child in self.get_children():
+            child.adjust_indent_level()
+        self.Layout()
+
+
+    def setup_dragging(self, drag_handler):
+        """ set callbacks for dragging """
+        def on_left_down(event):
+            """ left down callback """
+            drag_handler.cb_on_left_down(event, self)
+        def on_mouse_move(event):
+            """ mouse move callback """
+            drag_handler.cb_on_mouse_move(event, self)
+        def on_left_up(event):
+            """ left up callback """
+            drag_handler.cb_on_left_up(event, self)
+
+        self.Bind(wx.EVT_LEFT_DOWN, on_left_down)
+        self.Bind(wx.EVT_MOTION, on_mouse_move)
+        self.Bind(wx.EVT_LEFT_UP, on_left_up)
+
+        cb_methods = (on_left_down, on_mouse_move, on_left_up)
+        self.text_editor.setup_dragging(cb_methods)
+
+
+    def setup_highlighting(self):
+        """ events for supporting highlighting on hover """
+        self.Bind(wx.EVT_ENTER_WINDOW, self.cb_mouse_on_item)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.cb_mouse_left_item)
+
+
+    def cb_mouse_on_item(self, event):
+        """ highlight on hover """
+        # TODO : replace magic numbers by settings
+        self.SetBackgroundColour("#ffddaa")
+        self.checkbox_panel.SetBackgroundColour("#ffddaa")
+        self.text_editor.SetBackgroundColour("#ffddaa")
+        self.dd_icon.SetBackgroundColour("#ffddaa")
+        self.Refresh()
+
+    def cb_mouse_left_item(self, event):
+        """ remove highlight """
+        # TODO : replace magic numbers by settings
+        self.SetBackgroundColour("#ffffff")
+        self.checkbox_panel.SetBackgroundColour("#ffffff")
+        self.text_editor.SetBackgroundColour("#ffffff")
+        self.dd_icon.SetBackgroundColour("#ffffff")
+        self.Refresh()
+
+
+    def __str__(self):
+        """ string representation """
+        return self.text
+
+
+    def __repr__(self):
+        """ string representation """
+        return self.text

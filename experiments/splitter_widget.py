@@ -22,7 +22,7 @@ class SplitterPane(wx.SplitterWindow):
         self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.on_sash_changing)
 
 
-    def add_panels(self, panel_class1, panel_class2, min_width):
+    def add_panels(self, panel_class1, panel_class2, width, min_width):
         """
         Add the left and right panels
         """
@@ -33,7 +33,7 @@ class SplitterPane(wx.SplitterWindow):
         self.right_panel.SetBackgroundColour("white")
 
         self.SetMinimumPaneSize(min_width)
-        self.SplitVertically(self.left_panel, self.right_panel, min_width)
+        self.SplitVertically(self.left_panel, self.right_panel, width)
 
         return self.left_panel, self.right_panel
 

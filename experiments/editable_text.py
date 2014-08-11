@@ -6,6 +6,7 @@ Editable text panel
 """
 
 import wx
+import logging
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
 from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
 
@@ -89,11 +90,17 @@ class EditableText(wx.Panel):
         self.text_editor.SetFocus()
 
         def set_insertion_point(editor, loc):
-            editor.SetInsertionPoint(loc)
+            """
+            set the caret in the editor once it is made visible
+            Without the callafter, the whole text gets selected.
+            """
+            if loc == -1:
+                editor.SetInsertionPointEnd()
+            else:
+                editor.SetInsertionPoint(loc)
 
         if mouse_pos is not None:
             caret_location = get_insertion_pos(self, self.text, mouse_pos)
-            print "loc = %s" % caret_location
             wx.CallAfter(set_insertion_point, self.text_editor, caret_location)
 
         if insertion_point is not None:
@@ -137,12 +144,12 @@ class EditableText(wx.Panel):
             callback(self, reason)
 
 
-    def _call_del_in_empty_callbacks(self):
+    def _call_del_in_empty_callbacks(self, key):
         """
         Call the callbacks when del/backspace pressed on empty text
         """
         for callback, data in self.del_in_empty_callbacks:
-            callback(data)
+            callback(data, key)
 
 
     def _on_key_down_in_edit(self, event):
@@ -151,7 +158,7 @@ class EditableText(wx.Panel):
         Used for handling "Enter", "Esc" and the "Up" and "Down" keys.
         """
         key = event.GetKeyCode()
-        print "Keycode : %s" % key
+        logging.debug("Keycode : %s", key)
 
         if key == wx.WXK_RETURN:
             if not (event.controlDown or
@@ -172,7 +179,7 @@ class EditableText(wx.Panel):
                 if key in (wx.WXK_DELETE, wx.WXK_BACK):
                     curr_text = self.text_editor.GetValue()
                     if curr_text == "":
-                        self._call_del_in_empty_callbacks()
+                        self._call_del_in_empty_callbacks(key)
 
                 if key == wx.WXK_ESCAPE:
                     self.escape_pressed = True
@@ -285,6 +292,20 @@ class EditableText(wx.Panel):
         self.stext.Bind(wx.EVT_MOUSEWHEEL, callback)
         self.text_editor.Bind(wx.EVT_MOUSEWHEEL, callback)
 
+    def setup_dragging(self, cb_methods):
+        """
+        Setup callbacks which enable dragging and dropping.
+        """
+        (on_left_down, on_mouse_move, on_left_up) = cb_methods
+
+        self.stext.Bind(wx.EVT_LEFT_DOWN, on_left_down)
+        self.stext.Bind(wx.EVT_MOTION, on_mouse_move)
+        self.stext.Bind(wx.EVT_LEFT_UP, on_left_up)
+
+        self.Bind(wx.EVT_LEFT_DOWN, on_left_down)
+        self.Bind(wx.EVT_MOTION, on_mouse_move)
+        self.Bind(wx.EVT_LEFT_UP, on_left_up)
+
 
 class DoubleClickEditor(EditableText):
     """
@@ -372,4 +393,4 @@ def stop_editing_category_name(item):
     """
     if item.editing_text is True:
         item.end_edit(True, "lost_focus")
-        print "finished editing"
+        logging.debug("finished editing")

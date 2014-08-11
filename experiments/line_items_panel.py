@@ -14,9 +14,12 @@ from experiments.wx_utils import get_image_path
 
 class DropDownIcon(wx.Panel):
     """ + - icon for line items """
-    image1 = None
-    image2 = None
-    image3 = None
+    image1 = None # minus dark grey
+    image2 = None # minus black
+    image3 = None # minus light
+    image4 = None # plus dark
+    image5 = None # plus black
+    image6 = None # plus light
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
@@ -25,22 +28,45 @@ class DropDownIcon(wx.Panel):
 
         self.load_images()
 
-        self.arrow_right = wx.StaticBitmap(self, -1, self.image1, pos=(0, 0))
-        self.arrow_down = wx.StaticBitmap(self, -1, self.image2, pos=(0, 0))
-        self.arrow_right.Hide()
+        self.minus_dark = wx.StaticBitmap(self, -1, self.image1, pos=(0, 0))
+        self.minus_black = wx.StaticBitmap(self, -1, self.image2, pos=(0, 0))
+        self.minus_light = wx.StaticBitmap(self, -1, self.image3, pos=(0, 0))
+        self.plus_dark = wx.StaticBitmap(self, -1, self.image4, pos=(0, 0))
+        self.plus_black = wx.StaticBitmap(self, -1, self.image5, pos=(0, 0))
+        self.plus_light = wx.StaticBitmap(self, -1, self.image6, pos=(0, 0))
+
+        self.show_icon("minus_light")
+
+        for attr in ["minus_dark", "minus_black", "minus_light",
+                             "plus_dark", "plus_black", "plus_light"]:
+            image = getattr(self, attr)
+            image.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
 
         self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
-        self.arrow_down.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
-        self.arrow_right.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+
+
+    def show_icon(self, attr):
+        """ hide all the show only one icon """
+        self.hide_all()
+        image = getattr(self, attr, None)
+        if image is not None:
+            image.Show()
+
+
+    def hide_all(self):
+        """ hide all the icons """
+        for attr in ["minus_dark", "minus_black", "minus_light",
+                     "plus_dark", "plus_black", "plus_light"]:
+            image = getattr(self, attr)
+            image.Hide()
 
 
     def load_images(self):  # pylint: disable=no-self-use
         """ load the images """
         if DropDownIcon.image1 is None:
-            for i in [1, 2, 3]:
+            for i in range(1, 7):
                 attr = "image%s" % (i)
                 image = wx.Image(get_image_path(i), wx.BITMAP_TYPE_PNG).ConvertToBitmap()
-                # image.SetSize((40, 40))
                 setattr(DropDownIcon, attr, image)
 
 
@@ -48,12 +74,10 @@ class DropDownIcon(wx.Panel):
         """ on click, toggle betwen + / - """
         if self.expanded is True:
             self.expanded = False
-            self.arrow_down.Hide()
-            self.arrow_right.Show()
+            self.show_icon("plus_black")
         else:
             self.expanded = True
-            self.arrow_down.Show()
-            self.arrow_right.Hide()
+            self.show_icon("minus_light")
 
         if self.expand_callback is not None:
             self.expand_callback(self.expanded)
@@ -102,7 +126,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
         self.dd_icon = DropDownIcon(self)
         self.dd_icon.set_callback_on_click(self.cb_on_arrow_clicked)
-        self.sizer.Add(self.dd_icon, 0)
+        self.sizer.Add(self.dd_icon, 0, wx.CENTER, 5)
 
         if hasattr(LineItemsPanel, "checkbox_size"):
             size = LineItemsPanel.checkbox_size

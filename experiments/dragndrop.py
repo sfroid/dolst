@@ -64,6 +64,7 @@ class DragDropMixin(object):
     def cb_on_left_up(self, event, item):
         """ end dragging """
         self.left_down = False
+        returnval = self.dragging
         if self.dragging is True:
             logging.debug("end dragging")
             self.continue_dragging(event)
@@ -73,6 +74,8 @@ class DragDropMixin(object):
             self.dragged_data = {}
         else:
             event.Skip()
+
+        return returnval
 
 
     def start_dragging(self, event, item):

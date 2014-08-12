@@ -158,7 +158,7 @@ class EditableText(wx.Panel):
         Used for handling "Enter", "Esc" and the "Up" and "Down" keys.
         """
         key = event.GetKeyCode()
-        logging.debug("Keycode : %s", key)
+        logging.info("Keycode : %s", key)
 
         if key == wx.WXK_RETURN:
             if not (event.controlDown or

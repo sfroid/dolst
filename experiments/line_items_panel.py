@@ -156,6 +156,8 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.set_background_color("#ffffff")
         self.update_text_view()
 
+        self.Bind(wx.EVT_LEFT_UP, self.on_left_up)
+
         self.SetSizer(sizer)
         sizer.Fit(self)
         self.Layout()
@@ -362,7 +364,12 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
             drag_handler.cb_on_mouse_move(event, self)
         def on_left_up(event):
             """ left up callback """
-            drag_handler.cb_on_left_up(event, self)
+            dragging = drag_handler.cb_on_left_up(event, self)
+            if dragging is False:
+                self.on_left_up(event)
+
+        # unbind existing method and bind new one.
+        self.Unbind(wx.EVT_LEFT_UP, handler=self.on_left_up)
 
         self.Bind(wx.EVT_LEFT_DOWN, on_left_down)
         self.Bind(wx.EVT_MOTION, on_mouse_move)
@@ -370,6 +377,16 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
         cb_methods = (on_left_down, on_mouse_move, on_left_up)
         self.text_editor.setup_dragging(cb_methods)
+
+
+    def on_left_up(self, event):
+        """  start editing """
+        if self.text_editor.editing_text is False:
+            xpos = event.GetPosition()[0]
+            expos = self.text_editor.GetPosition()[0]
+            if xpos >= expos:
+                if xpos <= expos + self.text_editor.GetSize()[0]:
+                    self.text_editor.start_edit()
 
 
     def setup_highlighting(self):

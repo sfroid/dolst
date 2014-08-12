@@ -15,6 +15,7 @@ class MenuIDs(object):
     id_exit = 1002
     id_print_tree = 1003
     id_test_tree = 1004
+    id_reload_settings = 1005
 
 
 def cb_open_inpection_tool(event):
@@ -48,6 +49,12 @@ def cb_test_tree(event):
     app.view_top_frame.items_panel.test_tree()
 
 
+def cb_reload_settings(event):
+    """ Reload settings """
+    from settings.settings import reload_settings
+    reload_settings()
+
+
 def create_menu_bar(frame):
     """
     Creates the main menu bar
@@ -70,6 +77,9 @@ def create_menu_bar(frame):
 
     menu2.Append(MenuIDs.id_test_tree, "&test tree", "Test tree structure")
     frame.Bind(wx.EVT_MENU, cb_test_tree, id=MenuIDs.id_test_tree)
+
+    menu2.Append(MenuIDs.id_reload_settings, "&Reload Settings", "Reload settings")
+    frame.Bind(wx.EVT_MENU, cb_reload_settings, id=MenuIDs.id_reload_settings)
 
     menubar.Append(menu2, "De&v menu")
 

@@ -50,7 +50,7 @@ def main():
     Main entry point for the app.
     """
     app = wx.App(False)
-    frame = DolstTopFrame("Todo list panel", (500, 500))
+    frame = DolstTopFrame("To-do list panel", (500, 500))
     frame.CenterOnScreen()
     frame.Show(True)
     app.MainLoop()

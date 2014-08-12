@@ -160,7 +160,7 @@ class EditableText(wx.Panel):
         key = event.GetKeyCode()
         logging.info("Keycode : %s", key)
 
-        if key == wx.WXK_RETURN:
+        if key in (wx.WXK_RETURN, 370):  # 370 is keypad enter key
             if not (event.controlDown or
                     event.altDown or
                     event.shiftDown or

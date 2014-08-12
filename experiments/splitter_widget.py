@@ -9,7 +9,7 @@ import logging
 class SplitterPane(wx.SplitterWindow):
     """
     Splitter panel - shows the category on the left and
-    todo items on the right
+    to-do items on the right
     """
     def __init__(self, parent, ID):
         wx.SplitterWindow.__init__(self, parent, ID,

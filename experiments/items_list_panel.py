@@ -11,6 +11,7 @@ import logging
 # import weakref
 from experiments.line_items_panel import LineItemsPanel, DoublyLinkedLinearTree
 from experiments.dragndrop import DragDropMixin
+from settings.settings import get_view_settings
 
 
 class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-ancestors
@@ -150,9 +151,9 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         event.GetWheelRotation() returns Down : 120, Up: -120
         """
         if event.GetWheelRotation() > 0:
-            self.ScrollLines(-3)
+            self.ScrollLines(-1 * get_view_settings("wheel_scroll_lines"))
         else:
-            self.ScrollLines(3)
+            self.ScrollLines(get_view_settings("wheel_scroll_lines"))
 
 
     def _on_del_empty_line(self, item, key):

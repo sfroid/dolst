@@ -73,8 +73,6 @@ class Controller(object):
         """
         Update view item panel with list of items
         """
-        # TODO : make this a call into self.view
-        # rather than into view.items_panel
         self.view.clear_and_add_items(data)
 
 

@@ -84,18 +84,18 @@ class DragDropMixin(object):
         self.dragging = True
         self.dragged_data['tree_item'] = item
 
-        # move out the item tree from the tree
         item.remove_tree_from_parent()
-
-        # and move out the children UI elements
         hd_items = set(item.get_all_children())
 
         # order them in the way they are in the view
         hd_items = [itx for itx in self.instance.line_item_panels if itx in hd_items]
         items_shown = [i.IsShown() for i in hd_items]
+
         self.instance.detach_items_from_ui(hd_items)
         self.dragged_data['hd_items'] = hd_items
         self.dragged_data['items_shown'] = items_shown
+        self.dragged_data['item_text'] = item.text_editor.stext.GetLabel()
+        self.set_dragging_text(item, len(hd_items))
         item.Raise()
 
         self.instance.Layout()
@@ -104,6 +104,19 @@ class DragDropMixin(object):
         self.insertions_points = self.instance.get_insertion_point_list()
         self.half_height = (self.insertions_points[1] - self.insertions_points[0])/2.0
         self.continue_dragging(event)
+
+
+    def set_dragging_text(self, item, numItems):
+        """ set the label of the dragged text """
+        label = item.text_editor.stext.GetLabel()
+        if numItems > 0:
+            label = "%s... (+%s item%s)" % (label[:10], numItems, "s" if numItems > 1 else "")
+            item.text_editor.stext.SetLabel(label)
+
+
+    def reset_dragging_text(self, item):
+        """ set the dragged item's text label to the original value """
+        item.text_editor.stext.SetLabel(self.dragged_data['item_text'])
 
 
     def continue_dragging(self, dummy_event):
@@ -162,6 +175,7 @@ class DragDropMixin(object):
                 prev_visible_item.get_parent_item().insert_after(item, prev_visible_item)
 
         self.insert_items_again(ins_loc + 1)
+        self.reset_dragging_text(item)
 
         # (statictext width bug) reinsert item to make sure it takes full width
         self.instance.sizer.Detach(item)
@@ -207,8 +221,24 @@ class DragDropMixin(object):
         self.instance.line_item_panels.remove(item)
         self.instance.sizer.Detach(item)
         loc = self.get_sizer_insertion_index(nip)
+        self.set_dragged_item_indent_level(item, loc)
         self.instance.line_item_panels.insert(loc, item)
         self.instance.sizer.Insert(loc, item)
+
+
+    def set_dragged_item_indent_level(self, item, loc):
+        """ set indent level of item as its dragged around """
+        level = 0
+        for i in range(loc - 1, -1, -1):
+            prev = self.instance.line_item_panels[i]
+            if prev.IsShown() is True:
+                level = prev.level
+                if prev.expanded and len(prev.children) > 0:
+                    level = level + 1
+
+                break
+
+        item.set_indent_level(level)
 
 
     def square_distance(self, x, y):  # pylint: disable=no-self-use

@@ -354,6 +354,12 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.Layout()
 
 
+    def set_indent_level(self, level):
+        """ set the indent level to argument """
+        self.sizer.Remove(0)
+        self.sizer.Insert(0, (20 * level, 0))
+
+
     def setup_dragging(self, drag_handler):
         """ set callbacks for dragging """
         def on_left_down(event):

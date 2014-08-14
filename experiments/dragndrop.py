@@ -102,7 +102,7 @@ class DragDropMixin(object):
 
         # create list of y positions of all remaining list_items
         self.insertions_points = self.instance.get_insertion_point_list()
-        self.half_height = (self.insertions_points[1][2] - self.insertions_points[0][2])/2.0
+        self.half_height = (self.insertions_points[1] - self.insertions_points[0])/2.0
         self.continue_dragging(event)
 
 
@@ -173,9 +173,9 @@ class DragDropMixin(object):
 
     def get_insertion_point(self, ipoints, pos):  # pylint: disable=no-self-use
         """ get the view location of current drop point """
-        for j, (i, dummy_item, ipt) in enumerate(ipoints):
+        for j, ipt in enumerate(ipoints):
             if pos < ipt:
-                return j-1
+                return (j-1) if j > 0 else 0
         return j
 
 

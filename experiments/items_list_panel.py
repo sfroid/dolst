@@ -288,7 +288,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         for i, item in enumerate(sizer_items):
             item = item.GetWindow()
             if item.IsShown():
-                result.append((i, item, item.GetPosition()[1]))
+                result.append(item.GetPosition()[1])
         return result
 
 

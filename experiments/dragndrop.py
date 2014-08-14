@@ -97,6 +97,7 @@ class DragDropMixin(object):
         self.dragged_data['item_text'] = item.text_editor.stext.GetLabel()
         self.set_dragging_text(item, len(hd_items))
         item.Raise()
+        item.cb_mouse_left_item("dummyevent")
 
         self.instance.Layout()
 

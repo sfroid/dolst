@@ -14,10 +14,11 @@ class EditableText(wx.Panel):
     """
     A text field that allows inline editing when the user click on it.
     """
-    def __init__(self, parent, text):
+    def __init__(self, parent, obj):
         wx.Panel.__init__(self, parent)
 
-        self.text = text
+        self.obj = obj
+        self.text = obj.get_text()
         self.escape_pressed = False
         self.editing_text = False
         self.end_edit_callbacks = []
@@ -311,8 +312,8 @@ class DoubleClickEditor(EditableText):
     """
     Line editor for categories
     """
-    def __init__(self, parent, text):
-        EditableText.__init__(self, parent, text)
+    def __init__(self, parent, obj):
+        EditableText.__init__(self, parent, obj)
 
         self.selected = False
         self.selected_callbacks = []

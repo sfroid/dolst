@@ -9,15 +9,23 @@ import logging
 from experiments.event_bus import call_on_category_sel_event
 from experiments.top_frame import DolstTopFrame
 
+PERMISSION_MSG = """
+Dolst needs to be associated with a google account to sync with google tasks.\n
+Click OK to open a web browser to google and give permission to Dolst to manage tasks.
+Click Cancel to exit Dolst.
+"""
+
+
 class Controller(object):
     """
     Main controller class for Dolst
     """
     def __init__(self):
-        self.view = self._init_view()
-        self.model = self._init_data_model()
+        self.view = None
+        self.model = None
+        self._init_view()
+        self._init_data_model()
 
-        wx.CallAfter(self._update_category_view, self._get_category_data())
         call_on_category_sel_event(self._on_category_selection)
 
 
@@ -28,7 +36,7 @@ class Controller(object):
         frame = DolstTopFrame("To-do list panel", (500, 500))
         frame.CenterOnScreen()
         frame.Show(True)
-        return frame
+        self.view = frame
 
 
     def _init_data_model(self):  # pylint: disable=no-self-use
@@ -36,13 +44,69 @@ class Controller(object):
         Initialize the data model
         """
         logging.info("Intializing data model")
+        from experiments.data_manager import TasksDataManager
+
+        self.model = TasksDataManager()
+        wx.CallAfter(self.load_authorization)
+
+    def load_authorization(self):
+        if self.model.is_authenticated() is False:
+            wx.CallAfter(self._get_authorization)
+        else:
+            self.done_initialize()
+
+    def _get_authorization(self):
+        dlg = wx.MessageDialog(self.view,
+                               PERMISSION_MSG,
+                               "Google tasks permission...",
+                               wx.OK | wx.CANCEL | wx.OK_DEFAULT,
+                               )
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_OK:
+            import thread
+            thread.start_new_thread(self._open_browser_and_sign_on)
+
+            dlg = wx.MessageDialog(self.view,
+                                   "A browser window has been opened",
+                                   "Browser opened...",
+                                   wx.OK | wx.CANCEL | wx.OK_DEFAULT,
+                                   )
+            result = dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            self.exit_app()
+
+    def _open_browser_and_sign_on(self):
+        self.model.get_user_credentials()
+        if self.model.is_authenticated() is True:
+            self.done_initialize()
+        else:
+            self.authentication_failed()
+
+
+
+
+    def done_initialize(self):
+        wx.CallAfter(self._update_category_view, self._get_category_data())
+
+    def authentication_failed(self):
+        dlg = wx.MessageDialog(self.view,
+                               "We failed to get permissions from google.",
+                               "Authentication Failed...",
+                               wx.OK | wx.CANCEL | wx.OK_DEFAULT,
+                               )
+        dlg.ShowModal()
+        dlg.Destroy()
+        self.exit_app()
+
 
 
     def _get_category_data(self):  # pylint: disable=no-self-use
         """
         Get list of categories from the data model
         """
-        return ["C%s" % x for x in range(1, 8)]
+        return self.model.get_task_lists()
 
 
     def _update_category_view(self, data):
@@ -57,16 +121,15 @@ class Controller(object):
         Called when selected category is changed.
         """
         logging.info("received category selection event")
-        cat_name = event.item.text
-        self._update_items_view(self._get_items_data(cat_name))
+        category_obj = event.item.obj
+        self._update_items_view(self._get_items_data(category_obj))
 
 
-    def _get_items_data(self, category_name):
+    def _get_items_data(self, category_obj):
         """
         Get list of category items from the data model
         """
-        return [self._dummy_get_item("%s:%s" % (category_name, x))
-                for x in range(0, 2)]
+        return self.model.get_task_items(category_obj)
 
 
     def _update_items_view(self, data):
@@ -103,6 +166,13 @@ class Controller(object):
         else:
             children = []
         return (text, idx, completed, children)
+
+    def exit_app(self):
+        try:
+            self.model.save_data(self.view.get_data())
+        except:
+            pass
+        wx.Exit()
 
 
 def main():

@@ -40,29 +40,8 @@ class TasksDataManager(object):
     """
     def __init__(self):
         self.tasks_api = GoogleTasks()
-        self.api_initialized = False
-        self.init_api()
         self.tasklists = None
 
-
-    def init_api(self):
-        result = self.tasks_api.get_saved_credentials()
-        if result is True:
-            self.tasks_api.create_http_object_and_service()
-
-        self.api_initialized = result
-
-
-    def is_authenticated(self):
-        return self.api_initialized
-
-
-    def get_user_credentials(self):
-        result, msg = self.tasks_api.autheticate_and_get_creds()
-        self.api_initialized = result
-
-        if result is True:
-            self.tasks_api.create_http_object_and_service()
 
     def get_task_lists(self):
         if self.tasklists is None:
@@ -71,5 +50,5 @@ class TasksDataManager(object):
 
         return self.tasklists
 
-
-
+    def set_credentials(self, cred):
+        self.tasks_api.set_credentials(cred)

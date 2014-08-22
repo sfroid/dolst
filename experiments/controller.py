@@ -8,12 +8,7 @@ import wx
 import logging
 from experiments.event_bus import call_on_category_sel_event
 from experiments.top_frame import DolstTopFrame
-
-PERMISSION_MSG = """
-Dolst needs to be associated with a google account to sync with google tasks.\n
-Click OK to open a web browser to google and give permission to Dolst to manage tasks.
-Click Cancel to exit Dolst.
-"""
+from experiments.auth import Authentication
 
 
 class Controller(object):
@@ -47,59 +42,33 @@ class Controller(object):
         from experiments.data_manager import TasksDataManager
 
         self.model = TasksDataManager()
-        wx.CallAfter(self.load_authorization)
+        self.auth = Authentication(self.view,
+                                   ["..", "settings", "app_info.json"],
+                                   ["..", "settings", "creds.json"])
+        self.get_authorization()
 
-    def load_authorization(self):
-        if self.model.is_authenticated() is False:
-            wx.CallAfter(self._get_authorization)
+    def get_authorization(self, first_attempt=True):
+        if first_attempt is True:
+            self.auth.get_credentials(self.on_got_credentials)
         else:
-            self.done_initialize()
-
-    def _get_authorization(self):
-        dlg = wx.MessageDialog(self.view,
-                               PERMISSION_MSG,
-                               "Google tasks permission...",
-                               wx.OK | wx.CANCEL | wx.OK_DEFAULT,
-                               )
-        result = dlg.ShowModal()
-        dlg.Destroy()
-        if result == wx.ID_OK:
-            import thread
-            thread.start_new_thread(self._open_browser_and_sign_on)
-
-            dlg = wx.MessageDialog(self.view,
-                                   "A browser window has been opened",
-                                   "Browser opened...",
-                                   wx.OK | wx.CANCEL | wx.OK_DEFAULT,
-                                   )
-            result = dlg.ShowModal()
-            dlg.Destroy()
-        else:
-            self.exit_app()
-
-    def _open_browser_and_sign_on(self):
-        self.model.get_user_credentials()
-        if self.model.is_authenticated() is True:
-            self.done_initialize()
-        else:
-            self.authentication_failed()
+            self.auth.get_credentials(self.on_got_credentials, skip_consent=True)
 
 
+    def on_got_credentials(self, cred, msg):
+        if cred is None:
+            if msg == "reject auth":
+                self.exit_app()
 
+            result = self.auth.do_reauth()
+            if result is True:
+                self.auth.reinit_attrs()
+                wx.CallAfter(self.get_authorization, False)
+            else:
+                self.exit_app()
+            return
 
-    def done_initialize(self):
-        wx.CallAfter(self._update_category_view, self._get_category_data())
-
-    def authentication_failed(self):
-        dlg = wx.MessageDialog(self.view,
-                               "We failed to get permissions from google.",
-                               "Authentication Failed...",
-                               wx.OK | wx.CANCEL | wx.OK_DEFAULT,
-                               )
-        dlg.ShowModal()
-        dlg.Destroy()
-        self.exit_app()
-
+        self.model.set_credentials(cred)
+        wx.CallAfter(self._update_category_view)
 
 
     def _get_category_data(self):  # pylint: disable=no-self-use
@@ -109,10 +78,11 @@ class Controller(object):
         return self.model.get_task_lists()
 
 
-    def _update_category_view(self, data):
+    def _update_category_view(self):
         """
         Update the category panel with the list of categories
         """
+        data = self._get_category_data()
         self.view.update_category_view(data)
 
 

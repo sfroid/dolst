@@ -11,9 +11,16 @@ class TaskList(object):
     def __init__(self, idx, title):
         self.idx = idx
         self.title = title
+        self.items = None
 
     def get_title(self):
         return self.title
+
+    def set_items(self, items):
+        self.items = items
+
+    def get_items(self):
+        return self.items
 
     def __cmp__(self, other):
         return cmp(self.title, other.title)
@@ -43,12 +50,25 @@ class TasksDataManager(object):
         self.tasklists = None
 
 
+    def set_credentials(self, cred):
+        self.tasks_api.set_credentials(cred)
+
+
     def get_task_lists(self):
         if self.tasklists is None:
             tlists = self.tasks_api.get_tasklists()
-            self.tasklists = [TaskList(t['id'], t['title']) for t in tlists['items']]
+            self.tasklists = dict([(t['id'], TaskList(t['id'], t['title'])) for t in tlists['items']])
 
         return self.tasklists
 
-    def set_credentials(self, cred):
-        self.tasks_api.set_credentials(cred)
+    def get_task_items(self, list_id):
+        task_list = self.tasklists.get(task_list, None)
+        if task_list is None:
+            raise ValueError("Bad task list id, or task list does not exist. ID : %s" % list_id)
+
+        if
+
+
+        return task_items
+
+

@@ -24,8 +24,8 @@ class GoogleTasks(object):
         return tasklists
 
 
-    def get_tasks(self, tasklist):
-        tasks = self.service.tasks.list(tasklist=tasklist).execute(http=self.http)
+    def get_task_items(self, list_id):
+        tasks = self.service.tasks.list(tasklist=list_id).execute(http=self.http)
         return tasks
 
 

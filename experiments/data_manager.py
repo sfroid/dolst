@@ -25,12 +25,37 @@ class TaskList(object):
     def __cmp__(self, other):
         return cmp(self.title, other.title)
 
+
+class TaskItem(object):
+    def __init__(self, idx, title, complete):
+        self.idx = idx
+        self.title = title
+        self.complete = complete
+        self.children = []
+
+
+class TaskListView(object):
+    def __init__(self, tlist):
+        self.idx = tlist.idx
+        self.title = tlist.title
+
     def get_text(self):
         return self.title
 
 
-class TaskItem(object):
-    pass
+class TaskView(object):
+    def __init__(self, task):
+        self.idx = task.idx
+        self.title = task.title
+        self.complete = task.complete
+        self.children = []
+
+    def get_text(self):
+        return self.title
+
+    def get_details(self):
+        return (self.idx, self.title, self.complete, self.children)
+
 
 
 class TasksDataManager(object):
@@ -59,16 +84,26 @@ class TasksDataManager(object):
             tlists = self.tasks_api.get_tasklists()
             self.tasklists = dict([(t['id'], TaskList(t['id'], t['title'])) for t in tlists['items']])
 
-        return self.tasklists
+        data = [TaskListView(tlist) for tlist in self.tasklists.values()]
+        return data
 
-    def get_task_items(self, list_id):
-        task_list = self.tasklists.get(task_list, None)
+    def get_task_items(self, list_obj):
+        task_list = self.tasklists.get(list_obj.idx, None)
         if task_list is None:
-            raise ValueError("Bad task list id, or task list does not exist. ID : %s" % list_id)
+            raise ValueError("Bad task list id, or task list does not exist. ID : %s" % list_obj.idx)
 
-        if
+        if task_list.items is None:
+            task_items = self.tasks_api.get_task_items(task_list.idx)
+            task_items = dict([(t['id'], TaskItem(t['id'],
+                                                  t['title'],
+                                                  t['status'] != 'needsAction'))
+                               for t in task_items['items']])
 
+            task_list.set_items(task_items)
 
-        return task_items
+        task_items = task_list.get_items()
+
+        data = [TaskView(titem) for titem in task_items.values()]
+        return data
 
 

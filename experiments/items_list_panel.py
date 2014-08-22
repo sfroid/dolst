@@ -241,7 +241,7 @@ class ItemsListPanel(ScrolledPanel, DragDropMixin):  # pylint: disable=too-many-
         a tuple of tuples.
         """
         for dt in data:
-            text, idx, comp, children = dt
+            idx, text, comp, children = dt.get_details()
             sibling = item = self.create_and_add_item(parent, sibling, (text, idx, comp))
             if len(children) > 0:
                 self.add_items(children, item, sibling)

@@ -7,7 +7,7 @@ The Line panel which holds the editable text and other widgets.
 
 import wx
 import logging
-from experiments.editable_text import EditableText
+from experiments.editable_text import EditableText, TextObj
 from experiments.linked_tree import DoublyLinkedLinearTree
 from experiments.wx_utils import get_image_path
 
@@ -146,7 +146,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         self.checkbox.SetValue(self.complete)
         sizer.Add(self.checkbox_panel, 0)
 
-        self.text_editor = EditableText(self, self.text)
+        self.text_editor = EditableText(self, TextObj(self.idx, self.text))
         self.text_editor.callback_on_end_edit(self.cb_on_end_textedit)
         self.text_editor.callback_on_tab_pressed(self.cb_on_tab_pressed)
         sizer.Add(self.text_editor, 1, wx.EXPAND)

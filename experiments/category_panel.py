@@ -7,7 +7,9 @@ Items List Panel
 
 import wx
 from wx.lib.scrolledpanel import ScrolledPanel
-from experiments.editable_text import DoubleClickEditor, stop_editing_category_name
+from experiments.editable_text import (DoubleClickEditor,
+                                       stop_editing_category_name,
+                                       TextObj)
 from experiments.event_bus import notify_category_sel_event
 
 
@@ -47,7 +49,7 @@ class CategoryListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
         new_list.sort()
         self.list_items_names = new_list
         pos = new_list.index(item)
-        item = DoubleClickEditor(self, item)
+        item = DoubleClickEditor(self, TextObj(item.idx, item.get_text()))
         if pos == len(new_list) - 1:
             self.sizer.Add(item, 0, wx.EXPAND | wx.LEFT | wx.RIGHT, border=self.border)
         else:

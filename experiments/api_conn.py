@@ -25,20 +25,5 @@ class GoogleTasks(object):
 
 
     def get_task_items(self, list_id):
-        tasks = self.service.tasks.list(tasklist=list_id).execute(http=self.http)
+        tasks = self.service.tasks().list(tasklist=list_id).execute(http=self.http)
         return tasks
-
-
-if __name__ == "__main__":
-    fname = abs_path(["..", "settings", "dolst2.cred"])
-    tasks = GoogleTasks(fname)
-    result = tasks.get_saved_credentials()
-    if result is None:
-        result, msg = tasks.autheticate_and_get_creds()
-
-    if result is True:
-        tasks.create_http_object_and_service()
-        print tasks.get_tasklists()
-    else:
-        print msg
-

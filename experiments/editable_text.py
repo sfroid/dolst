@@ -10,6 +10,16 @@ import logging
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
 from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
 
+
+class TextObj(object):
+    def __init__(self, idx, text):
+        self.idx = idx
+        self.text = text
+
+    def get_text(self):
+        return self.text
+
+
 class EditableText(wx.Panel):
     """
     A text field that allows inline editing when the user click on it.

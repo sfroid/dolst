@@ -98,7 +98,7 @@ class ClientRedirectHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     query = dict(parse_qsl(query))
     s.server.query_params = query
     s.wfile.write("<html><head><title>Authentication Status</title></head>")
-    s.wfile.write("<body><p>The authentication flow has completed.</p>")
+    s.wfile.write("<body><p>The authentication flow has completed. You may now close this tab/window.</p>")
     s.wfile.write("</body></html>")
 
   def log_message(self, format, *args):

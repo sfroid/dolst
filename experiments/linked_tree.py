@@ -26,7 +26,7 @@ class DoublyLinkedLinearTree(object):
         isinstance(self.instance, LineItemsPanel)
 
 
-    def append_child_tree(self, tree_root):
+    def append_child_tree(self, tree_root, dummy):
         """ append an item tree to the end of children """
         tree1, bot1, botnext1 = self.get_tree_bot_next()
         tree2, bot2, botnext2 = tree_root.get_tree_bot_next()
@@ -51,12 +51,12 @@ class DoublyLinkedLinearTree(object):
             next1.previous_item = bott2
 
 
-    def insert_tree(self, item, pos):
+    def insert_tree(self, item, pos, update_icon=True):
         """ insert an item tree at the given position in children """
         if ((pos == -1) or
                 (pos >= len(self.children)) or
                 (len(self.children) == 0)):
-            self.append_child_tree(item)
+            self.append_child_tree(item, update_icon)
             return
 
         if pos == 0:

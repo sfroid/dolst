@@ -70,13 +70,15 @@ def get_insertion_pos(parent, text, mouse_pos):
 def get_image_path(num):
     """ return image path """
     # TODO - change paths when refactoring
-    fnames = {1: "minus_dark_grey14.png",
-              2: "minus_black14.png",
-              3: "minus_light_grey14.png",
-              4: "plus_dark_grey14.png",
-              5: "plus_black14.png",
-              6: "plus_light_grey14.png", }
+    fnames = {
+        1: "minus_dark_grey14.png",
+        2: "minus_black14.png",
+        3: "minus_light_grey14.png",
+        4: "plus_dark_grey14.png",
+        5: "plus_black14.png",
+        6: "plus_light_grey14.png",
+        7: "minus_lighter_grey14.png",
+    }
 
     name = fnames.get(num, "minus_dark_grey.png")
-
     return os.path.join(os.path.dirname(__file__), name)

@@ -20,11 +20,14 @@ class DropDownIcon(wx.Panel):
     image4 = None # plus dark
     image5 = None # plus black
     image6 = None # plus light
+    image7 = None # minus lighter
 
     def __init__(self, parent):
         wx.Panel.__init__(self, parent)
         self.expand_callback = None
         self.expanded = True
+        self.current_image = None
+        self.click_bound = False
 
         self.load_images()
 
@@ -34,28 +37,42 @@ class DropDownIcon(wx.Panel):
         self.plus_dark = wx.StaticBitmap(self, -1, self.image4, pos=(0, 0))
         self.plus_black = wx.StaticBitmap(self, -1, self.image5, pos=(0, 0))
         self.plus_light = wx.StaticBitmap(self, -1, self.image6, pos=(0, 0))
-
-        self.show_icon("minus_light")
+        self.minus_lighter = wx.StaticBitmap(self, -1, self.image7, pos=(0, 0))
 
         for attr in ["minus_dark", "minus_black", "minus_light",
-                             "plus_dark", "plus_black", "plus_light"]:
+                     "plus_dark", "plus_black", "plus_light"]:
             image = getattr(self, attr)
             image.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
 
         self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+        self.click_bound = True
+
+        self.show_icon("minus_lighter", disable_click=True)
 
 
-    def show_icon(self, attr):
+    def show_icon(self, attr, disable_click=False):
         """ hide all the show only one icon """
-        self.hide_all()
         image = getattr(self, attr, None)
-        if image is not None:
+        if (image is not None) and (image != self.current_image):
+            self.current_image = image
+            self.hide_all()
             image.Show()
+
+            if disable_click is True:
+                if self.click_bound is True:
+                    self.Unbind(wx.EVT_LEFT_UP, handler=self.cb_on_left_up)
+                    self.click_bound = False
+            else:
+                if self.click_bound is False:
+                    self.Bind(wx.EVT_LEFT_UP, self.cb_on_left_up)
+                    self.click_bound = True
+
+            self.Refresh()
 
 
     def hide_all(self):
         """ hide all the icons """
-        for attr in ["minus_dark", "minus_black", "minus_light",
+        for attr in ["minus_dark", "minus_black", "minus_light", "minus_lighter",
                      "plus_dark", "plus_black", "plus_light"]:
             image = getattr(self, attr)
             image.Hide()
@@ -64,7 +81,7 @@ class DropDownIcon(wx.Panel):
     def load_images(self):  # pylint: disable=no-self-use
         """ load the images """
         if DropDownIcon.image1 is None:
-            for i in range(1, 7):
+            for i in range(1, 8):
                 attr = "image%s" % (i)
                 image = wx.Image(get_image_path(i), wx.BITMAP_TYPE_PNG).ConvertToBitmap()
                 setattr(DropDownIcon, attr, image)
@@ -199,7 +216,10 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
         value = self.checkbox.GetValue()
         self.set_child_checkboxes(value)
-        self.set_parent_checkbox(value)
+        if value is False:
+            parent = self.get_parent_item()
+            if hasattr(parent, "set_checked"):
+                parent.set_checked(value)
 
 
     def set_child_checkboxes(self, value):
@@ -208,14 +228,6 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         for child in self.children:
             child.set_child_checkboxes(value)
         self.update_text_view()
-
-
-    def set_parent_checkbox(self, value):
-        """ if child is cleared, parent is also cleared """
-        if value is False:
-            parent = self.get_parent_item()
-            if hasattr(parent, "checkbox"):
-                parent.checkbox.SetValue(value)
 
 
     def set_cb_on_arrow_clicked(self, callback):
@@ -383,6 +395,54 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
 
         cb_methods = (on_left_down, on_mouse_move, on_left_up)
         self.text_editor.setup_dragging(cb_methods)
+
+
+    def insert_tree(self, item, pos):
+        """ when inserting a child, if its unchecked, uncheck parent """
+        super(LineItemsPanel, self).insert_tree(item, pos, update_icon=False)
+        if not item.is_checked():
+            self.set_checked(False)
+
+        self.update_dd_icon()
+
+
+    def append_child_tree(self, item, update_icon=True):
+        """ when inserting a child, if its unchecked, uncheck parent """
+        super(LineItemsPanel, self).append_child_tree(item, update_icon)
+        if not item.is_checked():
+            self.set_checked(False)
+
+        if update_icon is True:
+            self.update_dd_icon()
+
+
+    def remove_child_tree(self, child):
+        """ when removing child, if no children present, change dropdown icon """
+        super(LineItemsPanel, self).remove_child_tree(child)
+        self.update_dd_icon()
+
+
+    def update_dd_icon(self):
+        """ update the expand/contract icon """
+        if self.get_child_count() > 0:
+            if self.expanded is True:
+                self.dd_icon.show_icon("minus_light")
+            else:
+                self.dd_icon.show_icon("plus_black")
+        else:
+            self.dd_icon.show_icon("minus_lighter", disable_click=True)
+
+
+    def is_checked(self):
+        """ return checkbox status """
+        return self.checkbox.GetValue()
+
+    def set_checked(self, val, propagate=True):
+        """ set checkbox status """
+        self.checkbox.SetValue(val)
+        if propagate is True:
+            if (self.parent_item is not None) and hasattr(self.parent_item, 'set_checked'):
+                self.parent_item.set_checked(False)
 
 
     def on_left_up(self, event):

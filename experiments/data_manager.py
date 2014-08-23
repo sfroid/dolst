@@ -11,27 +11,86 @@ class TaskList(object):
     def __init__(self, idx, title):
         self.idx = idx
         self.title = title
-        self.items = None
+        self.item_dict = None
+        self.item_hierarchy = None
+
+    def is_populated(self):
+        return (self.item_dict is not None)
 
     def get_title(self):
         return self.title
 
-    def set_items(self, items):
-        self.items = items
+    def set_items(self, item_dict):
+        self.item_dict = item_dict
+        self.item_hierarchy = self.restructure_items(self.item_dict)
+        self.sort_task_items()
 
     def get_items(self):
-        return self.items
+        return self.item_hierarchy
+
+    def get_items_for_view(self):
+        result = self.copy_hierarchy_for_view()
+        return result
 
     def __cmp__(self, other):
         return cmp(self.title, other.title)
 
+    def restructure_items(self, item_dict):
+        items = item_dict.values()
+        root_level_items = []
+        for item in items:
+            parent = item.get_parent()
+            if parent is not None:
+                parent = item_dict[parent]
+                parent.add_child(item)
+            else:
+                root_level_items.append(item)
+
+        return root_level_items
+
+    def sort_task_items(self):
+        self.item_hierarchy.sort(key=lambda x: x.get_position())
+        for titem in self.item_hierarchy:
+            titem.sort_children()
+
+    def copy_hierarchy_for_view(self):
+        def build_view_items(items):
+            result = []
+            for item in items:
+                vitem = TaskView(item)
+                result.append(vitem)
+                vitem.add_children(build_view_items(item.get_children()))
+            return result
+
+        return build_view_items(self.item_hierarchy)
+
 
 class TaskItem(object):
-    def __init__(self, idx, title, complete):
+    def __init__(self, idx, parent, title, complete, position):
         self.idx = idx
+        self.parent = parent
+        self.position = position
         self.title = title
         self.complete = complete
         self.children = []
+
+    def get_parent(self):
+        return self.parent
+
+    def add_child(self, item):
+        self.children.append(item)
+
+    def get_position(self):
+        return self.position
+
+    def get_children(self):
+        return self.children[:]
+
+    def sort_children(self):
+        if len(self.children) > 1:
+            self.children.sort(key=lambda x: x.get_position())
+        for titem in self.children:
+            titem.sort_children()
 
 
 class TaskListView(object):
@@ -54,7 +113,13 @@ class TaskView(object):
         return self.title
 
     def get_details(self):
-        return (self.idx, self.title, self.complete, self.children)
+        return (self.idx, self.title, self.complete, self.children[:])
+
+    def get_children(self):
+        return self.children[:]
+
+    def add_children(self, children):
+        self.children.extend(children)
 
 
 
@@ -92,18 +157,18 @@ class TasksDataManager(object):
         if task_list is None:
             raise ValueError("Bad task list id, or task list does not exist. ID : %s" % list_obj.idx)
 
-        if task_list.items is None:
+        if task_list.is_populated() is False:
             task_items = self.tasks_api.get_task_items(task_list.idx)
             task_items = dict([(t['id'], TaskItem(t['id'],
+                                                  t.get('parent', None),
                                                   t['title'],
-                                                  t['status'] != 'needsAction'))
+                                                  t['status'] != 'needsAction',
+                                                  t.get('position', None)
+                                                  ))
                                for t in task_items['items']])
 
             task_list.set_items(task_items)
 
-        task_items = task_list.get_items()
+        task_items = task_list.get_items_for_view()
 
-        data = [TaskView(titem) for titem in task_items.values()]
-        return data
-
-
+        return task_items

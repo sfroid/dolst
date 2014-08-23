@@ -10,6 +10,7 @@ import logging
 from experiments.editable_text import EditableText, TextObj
 from experiments.linked_tree import DoublyLinkedLinearTree
 from experiments.wx_utils import get_image_path
+from experiments.context_menu_mixin import ContextMenu
 
 
 class DropDownIcon(wx.Panel):
@@ -107,7 +108,7 @@ class DropDownIcon(wx.Panel):
         self.expand_callback = callback
 
 
-class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
+class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree, ContextMenu):
     """
     A wx.Panel which holds a line of elements like
     dropdown arrow, checkbox, editable text, gear icon, etc.
@@ -119,6 +120,8 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree):
         wx.Panel.__init__(self, parent)
         DoublyLinkedLinearTree.__init__(self)
         DoublyLinkedLinearTree.set_instance(self, self)
+        ContextMenu.__init__(self)
+
         self.expanded = True
         self.selected = False
         self.dd_icon = None

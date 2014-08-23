@@ -9,6 +9,7 @@ import wx
 import logging
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
 from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
+from experiments.context_menu_mixin import ContextMenu
 
 
 class TextObj(object):
@@ -318,12 +319,13 @@ class EditableText(wx.Panel):
         self.Bind(wx.EVT_LEFT_UP, on_left_up)
 
 
-class DoubleClickEditor(EditableText):
+class DoubleClickEditor(EditableText, ContextMenu):
     """
     Line editor for categories
     """
     def __init__(self, parent, obj):
         EditableText.__init__(self, parent, obj)
+        ContextMenu.__init__(self)
 
         self.selected = False
         self.selected_callbacks = []

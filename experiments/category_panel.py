@@ -10,7 +10,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 from experiments.editable_text import (DoubleClickEditor,
                                        stop_editing_category_name,
                                        TextObj)
-from experiments.event_bus import notify_category_sel_event
+from experiments.event_bus import notify_event, CATEGORY_SEL_CHANGED
 
 
 class CategoryListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
@@ -73,7 +73,7 @@ class CategoryListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
 
         self.current_selection = item
         item.set_selected()
-        notify_category_sel_event(item)
+        notify_event(CATEGORY_SEL_CHANGED, item)
 
 
     def add_items(self, data):

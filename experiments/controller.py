@@ -6,7 +6,7 @@ initialization and communication between them.
 """
 import wx
 import logging
-from experiments.event_bus import call_on_category_sel_event
+from experiments.event_bus import bind_on_event, EVT_CAT_SEL_CHANGED
 from experiments.top_frame import DolstTopFrame
 from experiments.auth import Authentication
 
@@ -21,7 +21,7 @@ class Controller(object):
         self._init_view()
         self._init_data_model()
 
-        call_on_category_sel_event(self._on_category_selection)
+        bind_on_event(EVT_CAT_SEL_CHANGED, self._on_category_selection)
 
 
     def _init_view(self):  # pylint: disable=no-self-use

@@ -6,12 +6,15 @@ data modification changes, etc go here.
 """
 
 import wx
-import wx.lib.newevent
+from wx.lib.newevent import NewEvent
 import logging
 
 
-CATEGORY_SEL_CHANGED, EVT_CAT_SEL_CHANGED = wx.lib.newevent.NewEvent()
-
+CATEGORY_SEL_CHANGED, EVT_CAT_SEL_CHANGED = NewEvent()
+ITEM_EDITED_EVENT, EVT_ITEM_EDITED = NewEvent()
+ITEM_MOVED_EVENT, EVT_ITEM_MOVED = NewEvent()
+ITEM_ADDED_EVENT, EVT_ITEM_ADDED = NewEvent()
+ITEM_DELETED_EVENT, EVT_ITEM_DELETED = NewEvent()
 
 class EventBus(wx.EvtHandler):
     """
@@ -38,23 +41,29 @@ def get_event_bus():
     return EventBus.singleton_event_bus
 
 
-def call_on_category_sel_event(callback):
+def bind_on_event(event, callback):
     """
-    Register a cb to be called when a
-    category selection event occurs
-    """
-    eventbus = get_event_bus()
-    eventbus.Bind(EVT_CAT_SEL_CHANGED, callback)
-
-
-def notify_category_sel_event(item):
-    """
-    Announce that a category selection
-    event has occured, to anyone that's listening
+    Register a cb to be called when an
+    event occurs
     """
     eventbus = get_event_bus()
-    event = CATEGORY_SEL_CHANGED(item=item)
-    wx.PostEvent(eventbus, event)
+    eventbus.Bind(event, callback)
+
+
+def notify_event(event, item):
+    """
+    Announce that an event has occured,
+    to anyone that's listening to that event
+    """
+    eventbus = get_event_bus()
+    evt = event(item=item)
+    wx.PostEvent(eventbus, evt)
+
+
+def unbind_event(event, callback):
+    """ unbind from an event """
+    eventbus = get_event_bus()
+    eventbus.Unbind(event, handler=callback)
 
 
 def test2():
@@ -71,7 +80,7 @@ def test2():
 
     # create an event
     logging.debug("creating and binding the event")
-    some_new_event, evt_some_new_event = wx.lib.newevent.NewEvent()
+    some_new_event, evt_some_new_event = NewEvent()
     eventbus.Bind(evt_some_new_event, cb_test3)
 
     logging.debug("firing the event")

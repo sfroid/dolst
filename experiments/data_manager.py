@@ -4,7 +4,141 @@ Tasks data broker and manager
 """
 
 import wx
+import thread
+import time
+import logging
+
 from experiments.api_conn import GoogleTasks
+from experiments.event_bus import (bind_on_event,
+                                   EVT_ITEM_EDITED,
+                                   EVT_COMP_CHANGED,
+                                   EVT_ITEM_MOVED,
+                                   )
+
+
+class ChangeQueue(object):
+    def __init__(self):
+        self.keep_running = True
+        self.queue = []
+        thread.start_new_thread(self.processQueue, ())
+
+    def enque(self, data_tuple):
+        self.queue.append(data_tuple)
+
+    def processQueue(self):
+        while self.keep_running is True:
+            try:
+                while len(self.queue) > 0:
+                    data_tuple = self.queue.pop(0)
+                    method, args = data_tuple[0], data_tuple[1:]
+                    method(*args)
+            except:
+                logging.exception("Error while processing queue : %s", str(data_tuple))
+
+            time.sleep(5)
+
+    def stop_thread(self):
+        self.keep_running = False
+
+
+class TasksDataManager(object):
+    """
+    This class keeps the local data of the google tasks.
+    We usually look at one tasklist at a time. So we will have the notion of a current tasklist
+    We will have the ability to sync that task list in a periodic manner automatically
+    Probably once a minute
+
+    We load the tasklists and keep them
+    We then can load a particular tasklist and return all tasks in that list
+    We will set that tasklist as current and can set auto sync
+
+    """
+    def __init__(self):
+        self.tasks_api = GoogleTasks()
+        self.tasklists = None
+        self.list_to_items = {}
+        self.item_to_list = {}
+        self.changeQueue = ChangeQueue()
+
+        bind_on_event(EVT_ITEM_EDITED, self.on_item_edited)
+        bind_on_event(EVT_COMP_CHANGED, self.on_item_change_complete)
+        bind_on_event(EVT_ITEM_MOVED, self.on_item_moved)
+
+
+    def close(self):
+        self.changeQueue.stop_thread()
+
+
+    def set_credentials(self, cred):
+        self.tasks_api.set_credentials(cred)
+
+
+    def get_task_lists(self):
+        if self.tasklists is None:
+            tlists = self.tasks_api.get_tasklists()
+            self.tasklists = dict([(t['id'], TaskList(t['id'], t['title'])) for t in tlists['items']])
+
+        data = [TaskListView(tlist) for tlist in self.tasklists.values()]
+        return data
+
+    def get_task_items(self, list_obj):
+        task_list = self.tasklists.get(list_obj.idx, None)
+        tl_idx = task_list.idx
+
+        if task_list is None:
+            raise ValueError("Bad task list id, or task list does not exist. ID : %s" % tl_idx)
+
+        if task_list.is_populated() is False:
+            task_items = self.tasks_api.get_task_items(tl_idx)
+            task_items = dict([(t['id'], TaskItem(t['id'],
+                                                  t.get('parent', None),
+                                                  t['title'],
+                                                  t['status'] != 'needsAction',
+                                                  t.get('position', None)
+                                                  ))
+                               for t in task_items['items']])
+
+            self.list_to_items[tl_idx] = task_items
+            self.item_to_list.update(dict([(t, tl_idx) for t in task_items.keys()]))
+
+            task_list.set_items(task_items)
+
+        task_items = task_list.get_items_for_view()
+
+        return task_items
+
+
+    def on_item_edited(self, event):
+        logging.info("received item edit notification")
+        idx, title = event.idx, event.title
+        tl_idx = self.item_to_list.get(idx, None)
+        if tl_idx is None:
+            logging.error("task list index not found : %s", tl_idx)
+            return
+
+        self.tasks_api.update_item_title(tl_idx, idx, title)
+
+
+    def on_item_change_complete(self, event):
+        logging.info("received item checkbox notification")
+        idx, complete = event.idx, event.complete
+        tl_idx = self.item_to_list.get(idx, None)
+        if tl_idx is None:
+            logging.error("task list index not found : %s", tl_idx)
+            return
+
+        self.tasks_api.update_item_complete(tl_idx, idx, complete)
+
+    def on_item_moved(self, event):
+        logging.info("received item moved notification")
+        idx, parent, previous = event.idx, event.parent, event.previous
+        tl_idx = self.item_to_list.get(idx, None)
+        if tl_idx is None:
+            logging.error("task list index not found : %s", tl_idx)
+            return
+
+        self.tasks_api.move_item(tl_idx, idx, parent, previous)
+
 
 
 class TaskList(object):
@@ -121,54 +255,3 @@ class TaskView(object):
     def add_children(self, children):
         self.children.extend(children)
 
-
-
-class TasksDataManager(object):
-    """
-    This class keeps the local data of the google tasks.
-    We usually look at one tasklist at a time. So we will have the notion of a current tasklist
-    We will have the ability to sync that task list in a periodic manner automatically
-    Probably once a minute
-
-    We load the tasklists and keep them
-    We then can load a particular tasklist and return all tasks in that list
-    We will set that tasklist as current and can set auto sync
-
-    """
-    def __init__(self):
-        self.tasks_api = GoogleTasks()
-        self.tasklists = None
-
-
-    def set_credentials(self, cred):
-        self.tasks_api.set_credentials(cred)
-
-
-    def get_task_lists(self):
-        if self.tasklists is None:
-            tlists = self.tasks_api.get_tasklists()
-            self.tasklists = dict([(t['id'], TaskList(t['id'], t['title'])) for t in tlists['items']])
-
-        data = [TaskListView(tlist) for tlist in self.tasklists.values()]
-        return data
-
-    def get_task_items(self, list_obj):
-        task_list = self.tasklists.get(list_obj.idx, None)
-        if task_list is None:
-            raise ValueError("Bad task list id, or task list does not exist. ID : %s" % list_obj.idx)
-
-        if task_list.is_populated() is False:
-            task_items = self.tasks_api.get_task_items(task_list.idx)
-            task_items = dict([(t['id'], TaskItem(t['id'],
-                                                  t.get('parent', None),
-                                                  t['title'],
-                                                  t['status'] != 'needsAction',
-                                                  t.get('position', None)
-                                                  ))
-                               for t in task_items['items']])
-
-            task_list.set_items(task_items)
-
-        task_items = task_list.get_items_for_view()
-
-        return task_items

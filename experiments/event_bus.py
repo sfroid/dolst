@@ -12,6 +12,7 @@ import logging
 
 CATEGORY_SEL_CHANGED, EVT_CAT_SEL_CHANGED = NewEvent()
 ITEM_EDITED_EVENT, EVT_ITEM_EDITED = NewEvent()
+ITEM_COMP_CHANGED, EVT_COMP_CHANGED = NewEvent()
 ITEM_MOVED_EVENT, EVT_ITEM_MOVED = NewEvent()
 ITEM_ADDED_EVENT, EVT_ITEM_ADDED = NewEvent()
 ITEM_DELETED_EVENT, EVT_ITEM_DELETED = NewEvent()
@@ -50,13 +51,13 @@ def bind_on_event(event, callback):
     eventbus.Bind(event, callback)
 
 
-def notify_event(event, item):
+def notify_event(event, **kw):
     """
     Announce that an event has occured,
     to anyone that's listening to that event
     """
     eventbus = get_event_bus()
-    evt = event(item=item)
+    evt = event(**kw)
     wx.PostEvent(eventbus, evt)
 
 

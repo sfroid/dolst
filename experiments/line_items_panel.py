@@ -7,10 +7,13 @@ The Line panel which holds the editable text and other widgets.
 
 import wx
 import logging
+
 from experiments.editable_text import EditableText, TextObj
 from experiments.linked_tree import DoublyLinkedLinearTree
 from experiments.wx_utils import get_image_path
 from experiments.context_menu_mixin import ContextMenu
+from experiments.event_bus import notify_event, ITEM_COMP_CHANGED, ITEM_MOVED_EVENT
+
 
 
 class DropDownIcon(wx.Panel):
@@ -187,6 +190,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree, ContextMenu):
         """
         Evt handler - called when tab is pressed while editing text
         """
+        moved = False
         if shift_pressed is True:
             parent = self.get_parent_item()
             parent_parent = parent.get_parent_item()
@@ -199,6 +203,7 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree, ContextMenu):
 
                 parent.remove_child_tree(self)
                 parent_parent.insert_after(self, parent)
+                moved = True
         else:
             sibling = self.get_prev_item_at_same_level()
             # do something only if same level sibling found
@@ -206,8 +211,27 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree, ContextMenu):
             if sibling is not None:
                 self.remove_tree_from_parent()
                 sibling.append_child_tree(self)
+                moved = True
 
-        self.adjust_indent_level()
+        if moved is True:
+            self.adjust_indent_level()
+            self.notify_move_item()
+
+
+    def notify_move_item(self):
+        new_parent = self.get_parent_item()
+        new_previous = self.get_previous_sibling()
+
+        parent, previous = None, None
+        if hasattr(new_parent, 'text_editor'):
+            parent = new_parent.text_editor.obj.idx
+        if hasattr(new_previous, 'text_editor'):
+            previous = new_previous.text_editor.obj.idx
+
+        notify_event(ITEM_MOVED_EVENT,
+                     idx=self.text_editor.obj.idx,
+                     parent=parent,
+                     previous=previous)
 
 
     def cb_on_toggle_checkbox(self, event):
@@ -224,10 +248,20 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree, ContextMenu):
             if hasattr(parent, "set_checked"):
                 parent.set_checked(value)
 
+        self.notify_checkbox_update()
+
+    def notify_checkbox_update(self):
+        text_obj = self.text_editor.obj
+        notify_event(ITEM_COMP_CHANGED,
+                     idx=text_obj.get_idx(),
+                     complete=self.checkbox.GetValue())
 
     def set_child_checkboxes(self, value):
         """ if parent checkbox changes value, do same for children """
-        self.checkbox.SetValue(value)
+        if self.checkbox.GetValue() != value:
+            self.checkbox.SetValue(value)
+            self.notify_checkbox_update()
+
         for child in self.children:
             child.set_child_checkboxes(value)
         self.update_text_view()
@@ -442,7 +476,9 @@ class LineItemsPanel(wx.Panel, DoublyLinkedLinearTree, ContextMenu):
 
     def set_checked(self, val, propagate=True):
         """ set checkbox status """
-        self.checkbox.SetValue(val)
+        if self.checkbox.GetValue() != val:
+            self.checkbox.SetValue(val)
+            self.notify_checkbox_update()
         if propagate is True:
             if (self.parent_item is not None) and hasattr(self.parent_item, 'set_checked'):
                 self.parent_item.set_checked(False)

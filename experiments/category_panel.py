@@ -73,7 +73,7 @@ class CategoryListPanel(ScrolledPanel):  # pylint: disable=too-many-ancestors
 
         self.current_selection = item
         item.set_selected()
-        notify_event(CATEGORY_SEL_CHANGED, item)
+        notify_event(CATEGORY_SEL_CHANGED, item=item)
 
 
     def add_items(self, data):

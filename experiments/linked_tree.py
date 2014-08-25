@@ -120,6 +120,14 @@ class DoublyLinkedLinearTree(object):
         return self.children[pos + 1:]
 
 
+    def get_previous_sibling(self):
+        parent = self.get_parent_item()
+        pos = parent.get_child_pos(self)
+        if pos == 0:
+            return None
+        return parent.children[pos-1]
+
+
     def get_tree_bot_next(self):
         """ get the tree root, tree bottom, and the next of the bottom items """
         bot_item = self.get_tree_bottom_item()

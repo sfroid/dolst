@@ -10,6 +10,7 @@ import logging
 from experiments.platform_tools import get_editable_text_pos, get_editor_ctrl_pos
 from experiments.wx_utils import shifted_and_expanded, get_insertion_pos
 from experiments.context_menu_mixin import ContextMenu
+from experiments.event_bus import notify_event, ITEM_EDITED_EVENT
 
 
 class TextObj(object):
@@ -19,6 +20,12 @@ class TextObj(object):
 
     def get_text(self):
         return self.text
+
+    def get_idx(self):
+        return self.idx
+
+    def set_text(self, text):
+        self.text = text
 
 
 class EditableText(wx.Panel):
@@ -239,16 +246,25 @@ class EditableText(wx.Panel):
         The save argument determines whether the edit is to be
         saved or discarded. (e.g. discarded if esc was pressed)
         """
+
         if save:
-            self.text = self.text_editor.GetValue()
-            self.stext.Label = self.text
+            new_text = self.text_editor.GetValue()
+            if new_text != self.text:
+                notify_event(ITEM_EDITED_EVENT,
+                             idx=self.obj.idx,
+                             title=new_text)
+
+                self.text = new_text
+                self.obj.set_text(self.text)
+                self.stext.Label = self.text
+
+                wx.CallAfter(self._call_end_edit_callbacks, reason)
 
         self.last_cursor_position = self.text_editor.GetInsertionPoint()
         self.text_editor.Hide()
         self.stext.Show()
         self.editing_text = False
 
-        self._call_end_edit_callbacks(reason)
         self.Layout()
 
 

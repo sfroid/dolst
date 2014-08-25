@@ -8,6 +8,9 @@ Drag and drop mixing class for Items List Panel
 import wx
 import logging
 
+from experiments.event_bus import notify_event, ITEM_MOVED_EVENT
+
+
 class DragDropMixin(object):
     """ Mixin for supporting drag and drop """
     def __init__(self):
@@ -83,6 +86,8 @@ class DragDropMixin(object):
         logging.debug("starting to drag %s", item)
         self.dragging = True
         self.dragged_data['tree_item'] = item
+        self.dragged_data['item_parent'] = item.get_parent_item()
+        self.dragged_data['item_previous'] = item.get_previous_sibling()
 
         item.remove_tree_from_parent()
         hd_items = set(item.get_all_children())
@@ -184,6 +189,28 @@ class DragDropMixin(object):
                                    wx.EXPAND | wx.LEFT | wx.RIGHT, self.border)
         self.instance.SetAutoLayout(1)
         self.instance.SetupScrolling()
+
+        self.notify_on_move(item)
+
+
+    def notify_on_move(self, item):
+        new_parent = item.get_parent_item()
+        new_previous = item.get_previous_sibling()
+        old_parent = self.dragged_data['item_parent']
+        old_previous = self.dragged_data['item_previous']
+
+        if (new_parent != old_parent) or (new_previous != old_previous):
+            idx = item.text_editor.obj.idx
+            parent, previous = None, None
+            if hasattr(new_parent, 'text_editor'):
+                parent = new_parent.text_editor.obj.idx
+            if hasattr(new_previous, 'text_editor'):
+                previous = new_previous.text_editor.obj.idx
+
+            notify_event(ITEM_MOVED_EVENT,
+                         idx=idx,
+                         parent=parent,
+                         previous=previous)
 
 
     def get_insertion_point(self, ipoints, pos):  # pylint: disable=no-self-use
